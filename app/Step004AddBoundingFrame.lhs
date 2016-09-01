@@ -37,10 +37,9 @@ The size of the chart, in logical units. All the diagrams use the
 > w = 100
 > h = 100
 
-Compile using similar commands as in Step 1.
-
-I have no idea how mainWith knows that the Double arguments of frame
-  correspond to the width and height arguments of the frame above. (?)
+Compile using similar commands as in Step 1. The mainWith translates
+  the logical units used in w and h to the --width and --height
+  arguments (actual units) provided at the command line.
 
 > main :: IO ()
 > main = mainWith Main.frame
