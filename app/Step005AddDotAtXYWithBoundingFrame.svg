@@ -6,17 +6,17 @@
   </defs>
   <defs>
   </defs>
-  <g stroke-linejoin="miter" stroke-opacity="1.0" fill-opacity="0.0" stroke="rgb(0,0,0)" stroke-width="0.5" fill="rgb(0,0,0)" stroke-linecap="butt" stroke-miterlimit="10.0">
-    <path d="M 100.0000,100.0000 l -0.0000,-100.0000 h -100.0000 l -0.0000,100.0000 Z"/>
-  </g>
-  <defs>
-  </defs>
   <g stroke-linejoin="miter" stroke-opacity="1.0" fill-opacity="1.0" stroke="rgb(0,0,0)" stroke-width="0.5" fill="rgb(0,0,255)" stroke-linecap="butt" stroke-miterlimit="10.0">
-    <path d="M 60.0000,30.0000 c 0.0000,-5.5228 -4.4772,-10.0000 -10.0000 -10.0000c -5.5228,-0.0000 -10.0000,4.4772 -10.0000 10.0000c -0.0000,5.5228 4.4772,10.0000 10.0000 10.0000c 5.5228,0.0000 10.0000,-4.4772 10.0000 -10.0000Z"/>
+    <path d="M 80.0000,40.0000 c 0.0000,-5.5228 -4.4772,-10.0000 -10.0000 -10.0000c -5.5228,-0.0000 -10.0000,4.4772 -10.0000 10.0000c -0.0000,5.5228 4.4772,10.0000 10.0000 10.0000c 5.5228,0.0000 10.0000,-4.4772 10.0000 -10.0000Z"/>
   </g>
   <defs>
   </defs>
   <g stroke-linejoin="miter" stroke-opacity="1.0" fill-opacity="1.0" stroke="rgb(0,0,0)" stroke-width="0.0" fill="rgb(255,0,0)" stroke-linecap="butt" stroke-miterlimit="10.0">
-    <path d="M 50.4000,30.0000 c 0.0000,-0.2209 -0.1791,-0.4000 -0.4000 -0.4000c -0.2209,-0.0000 -0.4000,0.1791 -0.4000 0.4000c -0.0000,0.2209 0.1791,0.4000 0.4000 0.4000c 0.2209,0.0000 0.4000,-0.1791 0.4000 -0.4000Z"/>
+    <path d="M 70.4000,40.0000 c 0.0000,-0.2209 -0.1791,-0.4000 -0.4000 -0.4000c -0.2209,-0.0000 -0.4000,0.1791 -0.4000 0.4000c -0.0000,0.2209 0.1791,0.4000 0.4000 0.4000c 0.2209,0.0000 0.4000,-0.1791 0.4000 -0.4000Z"/>
+  </g>
+  <defs>
+  </defs>
+  <g stroke-linejoin="miter" stroke-opacity="1.0" fill-opacity="0.0" stroke="rgb(0,0,0)" stroke-width="0.5" fill="rgb(0,0,0)" stroke-linecap="butt" stroke-miterlimit="10.0">
+    <path d="M 100.0000,100.0000 l -0.0000,-100.0000 h -100.0000 l -0.0000,100.0000 Z"/>
   </g>
 </svg>

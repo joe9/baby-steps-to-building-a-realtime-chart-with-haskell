@@ -21,14 +21,16 @@ Related conversation on #diagrams:
  <byorgey> I suggest making a "canvas" first by making a large rectangle of the size you want your background to be, then drawing stuff on top of that.  You can even make it aninvisible rectangle.
 
 > dot :: Diagram B
-> dot = (translateY (0.20 * h) . translateX (0.10 * w) . showOrigin . fc blue . circle) 10
+> -- dot = (translateY (0.20 * h) . translateX (0.10 * w) . showOrigin . fc blue . circle) 10
+> dot = (moveTo (p2((0.20 * w),(0.10 * h))) . showOrigin . fc blue . circle) 10
+> -- dot = (showOrigin . fc blue . circle) 10
 > -- dot = (showOrigin . fc blue . circle) 10
 
 Add a frame for the chart. The frame dimensions are the width and
   height provided on the command line.
 
 > frame :: QDiagram B V2 Double Any
-> frame = rect w h
+> frame = moveTo (p2(0,0)) (rect w h)
 
 Overlay the dot on the above frame.
 
@@ -37,10 +39,12 @@ There is something wrong in how the dot is rendered on the frame. The
 
 > chart :: QDiagram B V2 Double Any
 > -- chart = atop dot frame
-> -- chart = atop frame dot
+> -- chart = centerXY ( atop frame dot)
+> chart = atop frame dot
+> -- chart = mconcat [frame,dot]
 > -- chart = frame ||| dot
-> -- chart = atop frame dot
-> chart = dot <> frame
+> -- chart = juxtapose unitX dot frame
+> -- chart = dot <> frame
 
 The size of the chart, in logical units. All the diagrams use the
   logical units. The translation from the actual units to the logical
