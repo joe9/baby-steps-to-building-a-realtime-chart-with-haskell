@@ -22,7 +22,8 @@ Related conversation on #diagrams:
 
 > dot :: Diagram B
 > -- dot = (translateY (0.20 * h) . translateX (0.10 * w) . showOrigin . fc blue . circle) 10
-> dot = (moveTo (p2((0.20 * w),(0.10 * h))) . showOrigin . fc blue . circle) 10
+> -- dot = (moveTo (p2((0.20 * w),(0.10 * h))) . showOrigin . fc blue . circle) 10
+> dot = (showOrigin . fc blue . circle) 10
 > -- dot = (showOrigin . fc blue . circle) 10
 > -- dot = (showOrigin . fc blue . circle) 10
 
@@ -30,17 +31,19 @@ Add a frame for the chart. The frame dimensions are the width and
   height provided on the command line.
 
 > frame :: QDiagram B V2 Double Any
-> frame = moveTo (p2(0,0)) (rect w h)
+> frame = rect w h
 
 Overlay the dot on the above frame.
 
-There is something wrong in how the dot is rendered on the frame. The
-  dot is not where (20,10) would be on the frame.
+Do not assume that the frame will be positioned at the
+  center. Explicitly position all the elements.
 
 > chart :: QDiagram B V2 Double Any
 > -- chart = atop dot frame
 > -- chart = centerXY ( atop frame dot)
-> chart = atop frame dot
+> -- chart = atop frame (moveTo (p2(1,2)) dot)
+> -- chart = position [(p2(0.1 * w, 0.2 * h),dot),(p2(0.5 * w,0.5 * h),frame)]
+> chart = position [(p2(0.2 * w, 0.2 * h),dot), (p2(0.5 * w,0.5 * h),frame)]
 > -- chart = mconcat [frame,dot]
 > -- chart = frame ||| dot
 > -- chart = juxtapose unitX dot frame
