@@ -52,6 +52,18 @@ scaledDataSeries is
 >                          minY = fst yDomainExtent
 >                          maxY = snd yDomainExtent
 
+Converting the scaled data series to a Point with x and y coordinates
+  corresponding to the w and h attributes of this chart.
+  The above scaledDataSeries converts to [P (V2 0.0 0.0),P (V2 10.0 12.5),P (V2 20.0 25.0),P (V2 30.0 37.5),P (V2 40.0 62.5),P (V2 50.0 100.0),P (V2 60.0 25.0),P (V2 70.0 37.5),P (V2 80.0 50.0),P (V2 90.0 75.0),P (V2 100.0 12.5)]
+
+> pointsOfScaledDataSeries :: [P2 Double]
+> pointsOfScaledDataSeries = map (uncurry scalify) scaledDataSeries
+
+Scale any fraction to an absolute coordinate.
+
+> scalify :: Double -> Double -> P2 Double
+> scalify x y = p2 (x * w, y * h)
+
 Draw a single blue coloured dot showing the local origin.
 
 Related conversation on #diagrams:
@@ -78,17 +90,12 @@ Do not assume that the frame will be positioned at the
   center. Explicitly position all the elements.
 
 > chart :: QDiagram B V2 Double Any
-> chart = position (zip (map (uncurry scalify) scaledDataSeries) (repeat dot) ++ [(scalify 0.5 0.5,frame)])
+> chart = position (zip pointsOfScaledDataSeries (repeat dot) ++ [(scalify 0.5 0.5,frame)])
 
 > -- chart = mconcat [frame,dot]
 > -- chart = frame ||| dot
 > -- chart = juxtapose unitX dot frame
 > -- chart = dot <> frame
-
-Scale any fraction to an absolute coordinate.
-
-> scalify :: Double -> Double -> P2 Double
-> scalify x y = p2 (x * w, y * h)
 
 The size of the chart, in logical units. All the diagrams use the
   logical units. The translation from the actual units to the logical
