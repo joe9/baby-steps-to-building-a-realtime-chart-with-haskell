@@ -94,13 +94,13 @@ Do not assume that the frame will be positioned at the
   center. Explicitly position all the elements.
 
 > chart :: QDiagram B V2 Double Any
-> chart = moveTo (p2(margin,margin))
->          (xAxis
->           <> yAxis
->           <> (position
->                 (zip pointsOfScaledDataSeries (repeat dot)
->                  ++ [(scalify 0.5 0.5,frame)]))
->           <> (fromVertices pointsOfScaledDataSeries))
+> chart = atop (centerXY
+>                      (xAxis
+>                        <> yAxis
+>                        <> (position
+>                              (zip pointsOfScaledDataSeries (repeat dot)))
+>                        <> (fromVertices pointsOfScaledDataSeries)))
+>              (centerXY frame)
 
 > -- chart = mconcat [frame,dot]
 > -- chart = frame ||| dot
