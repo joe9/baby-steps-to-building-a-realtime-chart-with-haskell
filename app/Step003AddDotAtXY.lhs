@@ -8,7 +8,7 @@
 > import Diagrams.Backend.SVG.CmdLine
 > import Diagrams.Prelude
 
-Draw a single dot.
+Draw a single blue coloured dot at x = 20 and y = 10.
 
 > dot :: Diagram B
 > dot = (translateY 20 . translateX 10 . fc blue . circle) 1
