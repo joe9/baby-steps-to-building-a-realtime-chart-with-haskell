@@ -1,22 +1,27 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
     "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
-<svg xmlns="http://www.w3.org/2000/svg" height="1000.0000" stroke-opacity="1" viewBox="0 0 1000 1000" font-size="1" width="1000.0000" xmlns:xlink="http://www.w3.org/1999/xlink" stroke="rgb(0,0,0)" version="1.1">
+<svg xmlns="http://www.w3.org/2000/svg" height="500.0000" stroke-opacity="1" viewBox="0 0 500 500" font-size="1" width="500.0000" xmlns:xlink="http://www.w3.org/1999/xlink" stroke="rgb(0,0,0)" version="1.1">
   <defs>
   </defs>
   <defs>
   </defs>
   <g stroke-linejoin="miter" stroke-opacity="1.0" fill-opacity="0.0" stroke="rgb(0,0,0)" stroke-width="0.5" fill="rgb(0,0,0)" stroke-linecap="butt" stroke-miterlimit="10.0">
-    <path d="M 1000.0000,1000.0000 l -0.0000,-1000.0000 h -1000.0000 l -0.0000,1000.0000 Z"/>
-  </g>
-  <defs>
-  </defs>
-  <g stroke-linejoin="miter" stroke-opacity="1.0" fill-opacity="1.0" stroke="rgb(0,0,0)" stroke-width="3.999999999999999" fill="rgb(255,0,0)" stroke-linecap="butt" stroke-miterlimit="10.0">
-    <path d="M 671.4286,214.2857 c 0.0000,-15.7796 -12.7919,-28.5714 -28.5714 -28.5714c -15.7796,-0.0000 -28.5714,12.7919 -28.5714 28.5714c -0.0000,15.7796 12.7919,28.5714 28.5714 28.5714c 15.7796,0.0000 28.5714,-12.7919 28.5714 -28.5714Z"/>
+    <path d="M 500.0000,500.0000 l -0.0000,-500.0000 h -500.0000 l -0.0000,500.0000 Z"/>
   </g>
   <defs>
   </defs>
   <g stroke-linejoin="miter" stroke-opacity="1.0" fill-opacity="1.0" stroke="rgb(0,0,0)" stroke-width="0.0" fill="rgb(255,0,0)" stroke-linecap="butt" stroke-miterlimit="10.0">
-    <path d="M 644.0000,214.2857 c 0.0000,-0.6312 -0.5117,-1.1429 -1.1429 -1.1429c -0.6312,-0.0000 -1.1429,0.5117 -1.1429 1.1429c -0.0000,0.6312 0.5117,1.1429 1.1429 1.1429c 0.6312,0.0000 1.1429,-0.5117 1.1429 -1.1429Z"/>
+    <path d="M 260.0000,250.0000 c 0.0000,-5.5228 -4.4772,-10.0000 -10.0000 -10.0000c -5.5228,-0.0000 -10.0000,4.4772 -10.0000 10.0000c -0.0000,5.5228 4.4772,10.0000 10.0000 10.0000c 5.5228,0.0000 10.0000,-4.4772 10.0000 -10.0000Z"/>
+  </g>
+  <defs>
+  </defs>
+  <g stroke-linejoin="miter" stroke-opacity="1.0" fill-opacity="1.0" stroke="rgb(0,0,0)" stroke-width="1.9999999999999996" fill="rgb(255,0,0)" stroke-linecap="butt" stroke-miterlimit="10.0">
+    <path d="M 335.7143,107.1429 c 0.0000,-7.8898 -6.3959,-14.2857 -14.2857 -14.2857c -7.8898,-0.0000 -14.2857,6.3959 -14.2857 14.2857c -0.0000,7.8898 6.3959,14.2857 14.2857 14.2857c 7.8898,0.0000 14.2857,-6.3959 14.2857 -14.2857Z"/>
+  </g>
+  <defs>
+  </defs>
+  <g stroke-linejoin="miter" stroke-opacity="1.0" fill-opacity="1.0" stroke="rgb(0,0,0)" stroke-width="0.0" fill="rgb(255,0,0)" stroke-linecap="butt" stroke-miterlimit="10.0">
+    <path d="M 322.0000,107.1429 c 0.0000,-0.3156 -0.2558,-0.5714 -0.5714 -0.5714c -0.3156,-0.0000 -0.5714,0.2558 -0.5714 0.5714c -0.0000,0.3156 0.2558,0.5714 0.5714 0.5714c 0.3156,0.0000 0.5714,-0.2558 0.5714 -0.5714Z"/>
   </g>
 </svg>

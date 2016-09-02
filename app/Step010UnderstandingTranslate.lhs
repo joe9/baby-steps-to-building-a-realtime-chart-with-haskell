@@ -27,7 +27,7 @@ Add a frame for the chart. The frame dimensions are the width and
   height provided on the command line.
 
 > frame :: QDiagram B V2 Double Any
-> frame = lineWidth ultraThin (rect frameWidth frameHeight)
+> frame = (showOrigin . lineWidth ultraThin . rect frameWidth) frameHeight
 
 Overlay the dot on the above frame.
 
@@ -35,7 +35,7 @@ Do not assume that the frame will be positioned at the
   center. Explicitly position all the elements.
 
 > chart :: QDiagram B V2 Double Any
-> chart = atop (moveTo (p2(20,40)) (fillColor red (centerXY dotNoFillColor)))
+> chart = atop (moveTo (p2(20,40)) (fillColor green (centerXY dotNoFillColor)))
 >              (centerXY frame)
 
 -- > chart = atop (atop (atop (atop (centerXY dot)
