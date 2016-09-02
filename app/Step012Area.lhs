@@ -72,10 +72,8 @@ and https://github.com/d3/d3-scale/blob/master/src/linear.js
 
 > scaledBids :: [(Double,Double)]
 > scaledBids = map ((\(x,y) -> ((x - minX)/(maxX - minX), (y - minY)/(maxY - minY))) . (\d -> (fromIntegral(mdId d),mdBid d))) dataSeries
->                    where minX = fst xDomainExtent
->                          maxX = snd xDomainExtent
->                          minY = fst yDomainExtent
->                          maxY = snd yDomainExtent
+>                    where (minX,maxX) = xDomainExtent
+>                          (minY,maxY) = yDomainExtent
 
 > scaledAsks :: [(Double,Double)]
 > scaledAsks = map ((\(x,y) -> ((x - minX)/(maxX - minX), (y - minY)/(maxY - minY))) . (\d -> (fromIntegral(mdId d),mdAsk d))) dataSeries
