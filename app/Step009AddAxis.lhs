@@ -42,6 +42,14 @@ Below from d3.js docs about domain and range.
 > xDomainExtent =  ((minimum . map fst) dataSeries, (maximum . map fst) dataSeries)
 > yDomainExtent =  ((minimum . map snd) dataSeries, (maximum . map snd) dataSeries)
 
+below from https://github.com/d3/d3-array/blob/master/src/ticks.js#L16
+and https://github.com/d3/d3-scale/blob/master/src/linear.js
+
+> -- tickStep :: Double -> Double -> Int -> Double
+> -- tickStep start stop count =
+> --   where step0 = abs(stop - start) / maximum [0,count]
+> --         step1 = abs(stop - start) / maximum [0,count]
+
 scaledDataSeries is
  [(0.0,0.0),(0.1,0.125),(0.2,0.25),(0.3,0.375),(0.4,0.625),(0.5,1.0),(0.6,0.25),(0.7,0.375),(0.8,0.5),(0.9,0.75),(1.0,0.125)]
 
