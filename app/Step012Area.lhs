@@ -7,6 +7,7 @@
 >
 > import Diagrams.Backend.SVG.CmdLine
 > import Diagrams.Prelude hiding (dot,frame)
+> import Data.Colour.SRGB.Linear
 
 > data MyData = MyData {mdId :: Int
 >                      ,mdBid :: Double
@@ -110,7 +111,7 @@ Related conversation on #diagrams:
  <byorgey> I suggest making a "canvas" first by making a large rectangle of the size you want your background to be, then drawing stuff on top of that.  You can even make it aninvisible rectangle.
 
 > dot :: Diagram B
-> dot = (showOrigin . fc blue . circle) 2
+> dot = (showOrigin . fc blue . circle) 1
 
 Add a frame for the chart. The frame dimensions are the width and
   height provided on the command line.
@@ -128,8 +129,9 @@ Do not assume that the frame will be positioned at the
   center. Explicitly position all the elements.
 
 > areaBetweenBidAndAsk :: QDiagram B V2 Double Any
-> areaBetweenBidAndAsk = (fillColor green . strokeLoop . closeLine . lineFromVertices)
->                         (pointsOfScaledAsks ++ (reverse pointsOfScaledBids))
+> areaBetweenBidAndAsk =
+>  (fillColor (rgb 253 208 162) . lineWidth veryThin . strokeLoop . closeLine . lineFromVertices)
+>  (pointsOfScaledAsks ++ (reverse pointsOfScaledBids))
 
 There is an issue here. The items are not lining up.
 
