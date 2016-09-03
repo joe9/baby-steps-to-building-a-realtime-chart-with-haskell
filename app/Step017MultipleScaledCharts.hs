@@ -8,8 +8,9 @@ module Main where
 import Diagrams.Backend.SVG.CmdLine
 import Diagrams.Prelude             hiding (dot, frame)
 --
-import PriceChartOwnScale
-import VolumeChartOwnScale
+import PriceChart
+import Scale
+import VolumeChart
 
 data MyData =
   MyData {mdId     :: Int
@@ -31,6 +32,22 @@ dataSeries =
   ,MyData 9 1.17 1.25 5000
   ,MyData 10 1.1 1.15 0]
 
+xScale, priceScale, volumeScale :: LinearScale
+xScale =
+  LinearScale (map (fromIntegral . mdId) dataSeries)
+              margin
+              chartWidth
+
+priceScale =
+  LinearScale (concatMap (\d -> [mdBid d,mdAsk d]) dataSeries)
+              margin
+              priceChartHeight
+
+volumeScale =
+  LinearScale (map mdVolume dataSeries)
+              0
+              volumeChartHeight
+
 -- Add a frame for the chart. The frame dimensions are the width and
 --  height provided on the command line.
 frame :: QDiagram B V2 Double Any
@@ -38,11 +55,16 @@ frame = (showOrigin . lineWidth ultraThin . rect frameWidth) frameHeight
 
 pChart :: QDiagram B V2 Double Any
 pChart =
-  priceChart (map (\d -> (mdId d,mdBid d)) dataSeries)
+  priceChart xScale
+             priceScale
+             (map (\d -> (mdId d,mdBid d)) dataSeries)
              (map (\d -> (mdId d,mdAsk d)) dataSeries)
 
 vChart :: QDiagram B V2 Double Any
-vChart = volumeChart (map (\d -> (mdId d,mdVolume d)) dataSeries)
+vChart =
+  volumeChart xScale
+              volumeScale
+              (map (\d -> (mdId d,mdVolume d)) dataSeries)
 
 chart :: QDiagram B V2 Double Any
 chart =
@@ -65,6 +87,7 @@ margin = 20
 chartWidth, chartHeight, priceChartHeight, volumeChartHeight
   :: Double
 chartWidth = 400
+
 chartHeight = 500
 
 priceChartHeight = 300

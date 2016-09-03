@@ -3,7 +3,7 @@
 {-# LANGUAGE NoMonomorphismRestriction #-}
 {-# LANGUAGE TypeFamilies              #-}
 
-module VolumeChart
+module VolumeChartOwnScale
   (volumeChart)
   where
 
@@ -15,15 +15,21 @@ import Scale
 type Volume = (Int,Double)
 
 volumeChart
-  :: (Scale xscale
-     ,Scale yscale)
-  => xscale -> yscale -> [Volume] -> QDiagram B V2 Double Any
-volumeChart xScale yScale volumes =
+  :: [Volume] -> QDiagram B V2 Double Any
+volumeChart volumes =
   (showOrigin . position)
     ([(p2 (chartWidth / 2,0),xAxis),(p2 (0,chartHeight / 2),yAxis)] <>
      zip scaledVolumes (repeat dot) <>
      bars)
-  where bars =
+  where xScale =
+          LinearScale (map (fromIntegral . fst) volumes)
+                      0
+                      chartWidth
+        yScale =
+          LinearScale (map snd volumes)
+                      0
+                      chartHeight
+        bars =
           map (uncurry (bar xScale yScale (barWidth (length volumes)))) volumes
         scaledVolumes = scaledPoints xScale yScale volumes
 

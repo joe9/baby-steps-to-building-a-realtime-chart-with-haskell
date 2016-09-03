@@ -3,7 +3,7 @@
 {-# LANGUAGE NoMonomorphismRestriction #-}
 {-# LANGUAGE TypeFamilies              #-}
 
-module PriceChart
+module PriceChartOwnScale
   (priceChart)
   where
 
@@ -17,10 +17,8 @@ type Bid = (Int,Double)
 type Ask = (Int,Double)
 
 priceChart
-  :: (Scale xscale
-     ,Scale yscale)
-  => xscale -> yscale -> [Bid] -> [Ask] -> QDiagram B V2 Double Any
-priceChart xScale yScale bids asks =
+  :: [Bid] -> [Ask] -> QDiagram B V2 Double Any
+priceChart bids asks =
   (showOrigin . position)
     ([(p2 (chartWidth / 2,0),xAxis),(p2 (0,chartHeight / 2),yAxis)] <>
      [(head areaVertices,areaBetweenBidAndAsk areaVertices)] <>
@@ -28,6 +26,8 @@ priceChart xScale yScale bids asks =
      zip scaledAsks (repeat dot))
   where scaledBids = scaledPoints xScale yScale bids
         scaledAsks = scaledPoints xScale yScale asks
+        xScale = LinearScale (map (fromIntegral . fst) (bids <> asks)) 0 chartWidth
+        yScale = LinearScale (map snd (bids <> asks)) 0 chartHeight
         areaVertices = scaledBids ++ reverse scaledAsks
 
 -- Draw a single blue coloured dot showing the local origin.
