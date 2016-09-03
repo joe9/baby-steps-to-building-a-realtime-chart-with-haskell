@@ -7,7 +7,7 @@
 >
 > import Diagrams.Backend.SVG.CmdLine
 > import Diagrams.Prelude hiding (dot,frame)
-> import Data.Colour.SRGB.Linear
+> import Data.Colour.SRGB
 
 > data MyData = MyData {mdId :: Int
 >                      ,mdBid :: Double
@@ -133,7 +133,7 @@ Could not get the  rgb(253,208,162) to work.
 
 > areaBetweenBidAndAsk :: QDiagram B V2 Double Any
 > areaBetweenBidAndAsk =
->  (\vertices -> (fillColor lightpink . lineColor lightpink . strokeLocLoop . flip at (head vertices) . closeLine . lineFromVertices) vertices)
+>  (\vertices -> (fillColor (sRGB24 253 208 162) . lineColor (sRGB24 253 208 162) . strokeLocLoop . flip at (head vertices) . closeLine . lineFromVertices) vertices)
 >  (pointsOfScaledBids ++ (reverse pointsOfScaledAsks))
 
 There is an issue here. The items are not lining up.
