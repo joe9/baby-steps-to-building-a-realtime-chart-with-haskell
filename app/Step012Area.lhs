@@ -109,7 +109,8 @@ Related conversation on #diagrams:
  <byorgey> I suggest making a "canvas" first by making a large rectangle of the size you want your background to be, then drawing stuff on top of that.  You can even make it aninvisible rectangle.
 
 > dot :: Diagram B
-> dot = (showOrigin . fc blue . circle) 1
+> dot = (showOrigin . fc blue . circle) 0.07
+> -- dot = (showOrigin . fc (rgb 253 208 162) . circle) 1
 
 Add a frame for the chart. The frame dimensions are the width and
   height provided on the command line.
@@ -126,9 +127,13 @@ Overlay the dot on the above frame.
 Do not assume that the frame will be positioned at the
   center. Explicitly position all the elements.
 
+Could not get the  rgb(253,208,162) to work.
+
+>  -- ((lineColor lightpink . fillColor lightpink . strokeLoop . closeLine . lineFromVertices))
+
 > areaBetweenBidAndAsk :: QDiagram B V2 Double Any
 > areaBetweenBidAndAsk =
->  (\vertices -> (fillColor (rgb 253 208 162) . lineWidth veryThin . strokeLocLoop . flip at (head vertices) . closeLine . lineFromVertices) vertices)
+>  (\vertices -> (fillColor lightpink . lineColor lightpink . strokeLocLoop . flip at (head vertices) . closeLine . lineFromVertices) vertices)
 >  (pointsOfScaledBids ++ (reverse pointsOfScaledAsks))
 
 There is an issue here. The items are not lining up.
