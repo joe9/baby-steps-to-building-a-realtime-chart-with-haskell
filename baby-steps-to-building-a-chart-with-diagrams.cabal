@@ -346,6 +346,7 @@ executable Step014MultipleVariablesUsingScaleModule
                      , SVGFonts
                      , mtl
                      , linear
+                     , colour
   default-language:    Haskell2010
   other-extensions:    DeriveDataTypeable
                      , FlexibleContexts

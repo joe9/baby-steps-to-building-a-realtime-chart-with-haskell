@@ -7,6 +7,7 @@ module Main where
 
 import Diagrams.Backend.SVG.CmdLine
 import Diagrams.Prelude hiding (dot,frame)
+import Data.Colour.SRGB.Linear
 --
 import Scale
 
@@ -30,30 +31,22 @@ dataSeries = [ MyData 1 1.19 1.26 1000
              ]
 
 xScale, yScale :: LinearScale
-xScale = LinearScale (map ((fromIntegral :: Int -> Double) . mdId) dataSeries) 0 chartWidth
+xScale =
+  LinearScale (map ((fromIntegral :: Int -> Double) . mdId) dataSeries) 0 chartWidth
 yScale = LinearScale allBidsAndAsks 0 chartHeight
 
 allBidsAndAsks :: [Double]
 allBidsAndAsks = concatMap (\a -> [mdBid a,mdAsk a]) dataSeries
 
-scaledBids, scaledAsks :: [(Double,Double)]
-scaledBids = map (\d -> ((toRange xScale . (fromIntegral :: Int -> Double) . mdId) d, (toRange yScale . mdBid) d)) dataSeries
-scaledAsks = map (\d -> ((toRange xScale . (fromIntegral :: Int -> Double) . mdId) d, (toRange yScale . mdAsk) d)) dataSeries
-
--- Converting the scaled data series to a Point with x and y coordinates
---  corresponding to the w and h attributes of this chart.
---  The above scaledDataSeries converts to [P (V2 0.0 0.0),P (V2 10.0 12.5),P (V2 20.0 25.0),P (V2 30.0 37.5),P (V2 40.0 62.5),P (V2 50.0 100.0),P (V2 60.0 25.0),P (V2 70.0 37.5),P (V2 80.0 50.0),P (V2 90.0 75.0),P (V2 100.0 12.5)]
-
-pointsOfScaledBids :: [P2 Double]
-pointsOfScaledBids = map (uncurry scalify) scaledBids
-
-pointsOfScaledAsks :: [P2 Double]
-pointsOfScaledAsks = map (uncurry scalify) scaledAsks
+-- scaledBids, scaledAsks :: [(Double,Double)]
+-- scaledBids = map (\d -> ((toRange xScale . (fromIntegral :: Int -> Double) . mdId) d, (toRange yScale . mdBid) d)) dataSeries
+-- scaledAsks = map (\d -> ((toRange xScale . (fromIntegral :: Int -> Double) . mdId) d, (toRange yScale . mdAsk) d)) dataSeries
 
 -- Scale any fraction to an absolute coordinate.
 
-scalify :: Double -> Double -> P2 Double
-scalify x y = p2 (x * chartWidth, y * chartHeight)
+scaledBids, scaledAsks :: [(P2 Double)]
+scaledBids = map (\d -> p2 ((toRange xScale . (fromIntegral :: Int -> Double) . mdId) d, (toRange yScale . mdBid) d)) dataSeries
+scaledAsks = map (\d -> p2 ((toRange xScale . (fromIntegral :: Int -> Double) . mdId) d, (toRange yScale . mdAsk) d)) dataSeries
 
 -- Draw a single blue coloured dot showing the local origin.
 
@@ -67,7 +60,7 @@ scalify x y = p2 (x * chartWidth, y * chartHeight)
 -- <byorgey> I suggest making a "canvas" first by making a large rectangle of the size you want your background to be, then drawing stuff on top of that.  You can even make it aninvisible rectangle.
 
 dot :: Diagram B
-dot = (showOrigin . fc blue . circle) 2
+dot = (showOrigin . fillColor blue . circle) 1
 
 -- Add a frame for the chart. The frame dimensions are the width and
 --  height provided on the command line.
@@ -76,24 +69,28 @@ frame :: QDiagram B V2 Double Any
 frame = lineWidth ultraThin (rect frameWidth frameHeight)
 
 xAxis, yAxis :: QDiagram B V2 Double Any
-xAxis = fromVertices [p2(0,0),p2(chartWidth,0)]
-yAxis = fromVertices [p2(0,0),p2(0,chartHeight)]
+xAxis = (lineWidth veryThin . fromVertices) [p2(0,0),p2(chartWidth,0)]
+yAxis = (lineWidth veryThin . fromVertices) [p2(0,0),p2(0,chartHeight)]
 
 -- Overlay the dot on the above frame.
 
 -- Do not assume that the frame will be positioned at the
 --  center. Explicitly position all the elements.
 
+areaBetweenBidAndAsk :: QDiagram B V2 Double Any
+areaBetweenBidAndAsk =
+ (\vertices -> (fillColor (rgb 253 208 162) . lineWidth veryThin . strokeLocLoop . flip at (head vertices) . closeLine . lineFromVertices) vertices)
+ (scaledBids ++ (reverse scaledAsks))
+
 chart :: QDiagram B V2 Double Any
 chart = atop (centerXY
                      (xAxis
                        <> yAxis
                        <> (position
-                             (zip pointsOfScaledBids (repeat dot)))
+                             (zip scaledBids (repeat dot)))
                        <> (position
-                             (zip pointsOfScaledAsks (repeat dot)))
-                       <> (fromVertices pointsOfScaledBids)
-                       <> (fromVertices pointsOfScaledAsks)))
+                             (zip scaledAsks (repeat dot)))
+                       <> areaBetweenBidAndAsk))
              (centerXY frame)
 
 -- chart = mconcat [frame,dot]
