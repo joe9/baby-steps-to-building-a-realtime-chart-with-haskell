@@ -60,7 +60,7 @@ scaledAsks = map (\d -> p2 ((toRange xScale . (fromIntegral :: Int -> Double) . 
 -- <byorgey> I suggest making a "canvas" first by making a large rectangle of the size you want your background to be, then drawing stuff on top of that.  You can even make it aninvisible rectangle.
 
 dot :: Diagram B
-dot = (showOrigin . fillColor blue . circle) 1
+dot = (showOrigin . fillColor blue . circle) 0.07
 
 -- Add a frame for the chart. The frame dimensions are the width and
 --  height provided on the command line.
@@ -79,7 +79,7 @@ yAxis = (lineWidth veryThin . fromVertices) [p2(0,0),p2(0,chartHeight)]
 
 areaBetweenBidAndAsk :: QDiagram B V2 Double Any
 areaBetweenBidAndAsk =
- (\vertices -> (fillColor (rgb 253 208 162) . lineWidth veryThin . strokeLocLoop . flip at (head vertices) . closeLine . lineFromVertices) vertices)
+ (\vertices -> (lineColor lightpink . fillColor lightpink . strokeLocLoop . flip at (head vertices) . closeLine . lineFromVertices) vertices)
  (scaledBids ++ (reverse scaledAsks))
 
 chart :: QDiagram B V2 Double Any
