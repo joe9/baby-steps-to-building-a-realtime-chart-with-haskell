@@ -331,6 +331,7 @@ executable Step012Area
 executable Step014MultipleVariablesUsingScaleModule
   hs-source-dirs:      app
   main-is:             Step014MultipleVariablesUsingScaleModule.hs
+  other-modules:       Scale
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N
   build-depends:       base
                      , baby-steps-to-building-a-chart-with-diagrams
@@ -357,6 +358,35 @@ executable Step014MultipleVariablesUsingScaleModule
 executable Step015MoreLocationIndependent
   hs-source-dirs:      app
   main-is:             Step015MoreLocationIndependent.hs
+  other-modules:       Scale
+  ghc-options:         -threaded -rtsopts -with-rtsopts=-N
+  build-depends:       base
+                     , baby-steps-to-building-a-chart-with-diagrams
+                     , gtk
+                     , groom
+                     , cairo
+                     , safe
+                     , diagrams
+                     , diagrams-cairo
+                     , diagrams-lib
+                     , diagrams-svg
+                     , diagrams-core
+                     , SVGFonts
+                     , mtl
+                     , linear
+                     , colour
+  default-language:    Haskell2010
+  other-extensions:    DeriveDataTypeable
+                     , FlexibleContexts
+                     , TemplateHaskell
+                     , UndecidableInstances
+                     , OverloadedStrings
+
+executable Step016MultipleCharts
+  hs-source-dirs:      app
+  main-is:             Step016MultipleCharts.hs
+  other-modules:       Scale
+                     , PriceChart
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N
   build-depends:       base
                      , baby-steps-to-building-a-chart-with-diagrams
