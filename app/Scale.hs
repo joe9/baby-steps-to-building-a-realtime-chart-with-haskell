@@ -5,6 +5,8 @@
 
 module Scale where
 
+import Diagrams.Prelude hiding (scale)
+
 -- deinterpolate(a, b)(x) takes a domain value x in [a,b] and returns the corresponding parameter t in [0,1].
 -- reinterpolate(a, b)(t) takes a parameter t in [0,1] and returns the corresponding domain value x in [a,b].
 -- will have to change the Domain values from Double to something more generic
@@ -18,6 +20,11 @@ class Scale s  where
   maxRange = snd . range
   range :: s -> (Double,Double)
   range s = (minRange s,maxRange s)
+
+-- Scale from the domain (input data range) to the range (absolute coordinate).
+scaledPoints :: (Scale x, Scale y) => x -> y -> [( Int,Double)] -> [(P2 Double)]
+scaledPoints xScale yScale =
+  map (\(i,v) -> p2((toRange xScale . fromIntegral) i,(toRange yScale) v))
 
 -- Assume Range is always 0 thru 1
 data LinearScale =

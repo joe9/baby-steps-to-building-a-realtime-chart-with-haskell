@@ -26,11 +26,6 @@ priceChart bids asks =
         yScale = LinearScale (map snd (bids <> asks)) 0 chartHeight
         areaVertices = scaledBids ++ reverse scaledAsks
 
--- Scale from the domain (input data range) to the range (absolute coordinate).
-scaledPoints :: (Scale x, Scale y) => x -> y -> [( Int,Double)] -> [(P2 Double)]
-scaledPoints xScale yScale =
-  map (\(i,v) -> p2((toRange xScale . fromIntegral) i,(toRange yScale) v))
-
 -- Draw a single blue coloured dot showing the local origin.
 -- Related conversation on #diagrams:
 -- What am I doing wrong here? translate (2 ^& 3) == translateX 2 . translateY 3, correct?

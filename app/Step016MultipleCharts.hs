@@ -9,6 +9,7 @@ import Diagrams.Backend.SVG.CmdLine
 import Diagrams.Prelude             hiding (dot, frame)
 --
 import PriceChart
+import VolumeChart
 
 data MyData =
   MyData {mdId     :: Int
@@ -40,11 +41,16 @@ pChart =
   priceChart (map (\d -> (mdId d,mdBid d)) dataSeries)
              (map (\d -> (mdId d,mdAsk d)) dataSeries)
 
+vChart :: QDiagram B V2 Double Any
+vChart = volumeChart (map (\d -> (mdId d,mdVolume d)) dataSeries)
+
 chart :: QDiagram B V2 Double Any
 chart =
   position [(p2 (frameWidth / 2,frameHeight / 2),frame)
+           ,(p2 (margin,margin + volumeChartHeight)
+            ,(scaleToX chartWidth . scaleToY priceChartHeight) pChart)
            ,(p2 (margin,margin)
-            ,(scaleToX priceChartWidth . scaleToY priceChartHeight) pChart)]
+            ,(scaleToX chartWidth . scaleToY volumeChartHeight) vChart)]
 
 -- The size of the chart, in logical units. All the diagrams use the
 --  logical units. The translation from the actual units to the logical
@@ -56,15 +62,14 @@ frameHeight = 500 + (2 * margin)
 
 margin = 20
 
-chartWidth, chartHeight :: Double
-priceChartWidth, priceChartHeight :: Double
+chartWidth, chartHeight, priceChartHeight, volumeChartHeight
+  :: Double
 chartWidth = 400
+chartHeight = 500
 
-priceChartWidth = 500
+priceChartHeight = 300
 
-chartHeight = 400
-
-priceChartHeight = 500
+volumeChartHeight = 200
 
 -- Compile using similar commands as in Step 1.
 -- The mainWith translates the logical units used in w and h to the
