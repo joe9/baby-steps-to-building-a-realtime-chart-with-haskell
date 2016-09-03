@@ -129,7 +129,7 @@ Do not assume that the frame will be positioned at the
 > areaBetweenBidAndAsk :: QDiagram B V2 Double Any
 > areaBetweenBidAndAsk =
 >  (\vertices -> (fillColor (rgb 253 208 162) . lineWidth veryThin . strokeLocLoop . flip at (head vertices) . closeLine . lineFromVertices) vertices)
->  (pointsOfScaledAsks ++ (reverse pointsOfScaledBids))
+>  (pointsOfScaledBids ++ (reverse pointsOfScaledAsks))
 
 There is an issue here. The items are not lining up.
 
