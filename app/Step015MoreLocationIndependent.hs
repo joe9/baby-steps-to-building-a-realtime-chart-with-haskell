@@ -73,12 +73,13 @@ dot = (showOrigin . fillColor blue . circle) 0.07
 -- Add a frame for the chart. The frame dimensions are the width and
 --  height provided on the command line.
 frame :: QDiagram B V2 Double Any
-frame = lineWidth ultraThin (rect frameWidth frameHeight)
+frame = (showOrigin . lineWidth ultraThin . rect frameWidth) frameHeight
 
 xAxis, yAxis :: QDiagram B V2 Double Any
-xAxis = (lineWidth veryThin . fromVertices) [p2 (0,0),p2 (chartWidth,0)]
+-- xAxis = (showOrigin . lineWidth veryThin . fromVertices) [p2 (0,0),p2 (chartWidth,0)]
+xAxis = (showOrigin . lineWidth veryThin . hrule) chartWidth
 
-yAxis = (lineWidth veryThin . fromVertices) [p2 (0,0),p2 (0,chartHeight)]
+yAxis = (showOrigin . lineWidth veryThin . vrule) chartHeight
 
 -- Overlay the dot on the above frame.
 -- Do not assume that the frame will be positioned at the
@@ -86,24 +87,24 @@ yAxis = (lineWidth veryThin . fromVertices) [p2 (0,0),p2 (0,chartHeight)]
 areaBetweenBidAndAsk
   :: [(P2 Double)] -> QDiagram B V2 Double Any
 areaBetweenBidAndAsk points =
-  (lineColor lightpink .
+  (showOrigin .
+   lineColor lightpink .
    fillColor lightpink . strokeLoop . closeLine . lineFromVertices) points
+
+priceChart :: QDiagram B V2 Double Any
+priceChart =
+  (showOrigin . position)
+    ([(p2 (chartWidth / 2,0),xAxis),(p2 (0,chartHeight / 2),yAxis)] <>
+     [(head areaVertices,areaBetweenBidAndAsk areaVertices)] <>
+     zip scaledBids (repeat dot) <>
+     zip scaledAsks (repeat dot))
+  where areaVertices = scaledBids ++ reverse scaledAsks
 
 chart :: QDiagram B V2 Double Any
 chart =
-  atop (centerXY ((position (zip scaledBids (repeat dot))) <>
-                  (position (zip scaledAsks (repeat dot))) <>
-                  (position [(p2 (0,0),xAxis)
-                            ,(p2 (0,0),yAxis)
-                            ,(head areaVertices
-                             ,areaBetweenBidAndAsk areaVertices)])))
-       (centerXY frame)
-  where areaVertices = scaledBids ++ reverse scaledAsks
+  position [(p2 (frameWidth / 2,frameHeight / 2),frame)
+           ,(p2 (margin,margin),priceChart)]
 
--- chart = mconcat [frame,dot]
--- chart = frame ||| dot
--- chart = juxtapose unitX dot frame
--- chart = dot <> frame
 -- The size of the chart, in logical units. All the diagrams use the
 --  logical units. The translation from the actual units to the logical
 --  units is done by the renderer. 100 corresponds to 100%.
