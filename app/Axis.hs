@@ -47,7 +47,7 @@ bottomAxis, leftAxis, rightAxis, topAxis
   => scale -> QDiagram B V2 Double Any
 bottomAxis s = atop ((showOrigin . fst) a) texts
   where a = axisHorizontally s
-        texts = (position . map (\(x,val) -> (p2 (x+12,-9),text val)) . snd) a
+        texts = (position . map (\(x,val) -> (p2 (x+10,-9),text val)) . snd) a
 
 -- rotate text by 90
 leftAxis = showOrigin . rotate (90 @@ deg) . fst . axisHorizontally

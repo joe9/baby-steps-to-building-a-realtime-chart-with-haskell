@@ -56,7 +56,7 @@ frame = (showOrigin . lineWidth ultraThin . rect frameWidth) frameHeight
 
 pChart :: QDiagram B V2 Double Any
 pChart =
-  showEnvelope
+--   showEnvelope
     (priceGraph xScale
              priceScale
              (map (\d -> (mdId d,mdBid d)) dataSeries)
@@ -64,7 +64,7 @@ pChart =
 
 vChart :: QDiagram B V2 Double Any
 vChart =
-  showEnvelope
+--   showEnvelope
    (volumeGraph xScale
               volumeScale
               (map (\d -> (mdId d,mdVolume d)) dataSeries))
@@ -89,21 +89,21 @@ chart =
 --  logical units. The translation from the actual units to the logical
 --  units is done by the renderer. 100 corresponds to 100%.
 margin, frameWidth, frameHeight :: Double
-frameWidth = 500 + (2 * margin)
+frameWidth = 800 + (2 * margin)
 
-frameHeight = 500 + (2 * margin)
+frameHeight = 800 + (2 * margin)
 
 margin = 20
 
 chartWidth, chartHeight, priceChartHeight, volumeChartHeight
   :: Double
-chartWidth = 500
+chartWidth = 800
 
-chartHeight = 500
+chartHeight = 800
 
-priceChartHeight = 300
+priceChartHeight = 500
 
-volumeChartHeight = 200
+volumeChartHeight = 300
 
 -- Compile using similar commands as in Step 1.
 -- The mainWith translates the logical units used in w and h to the
