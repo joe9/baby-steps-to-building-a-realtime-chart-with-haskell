@@ -92,21 +92,21 @@ chart =
 --  logical units. The translation from the actual units to the logical
 --  units is done by the renderer. 100 corresponds to 100%.
 margin, frameWidth, frameHeight :: Double
-frameWidth = 800 + (2 * margin)
+frameWidth = 1000 + (2 * margin)
 
-frameHeight = 800 + (2 * margin)
+frameHeight = 1000 + (2 * margin)
 
 margin = 20
 
 chartWidth, chartHeight, priceChartHeight, volumeChartHeight
   :: Double
-chartWidth = 800
+chartWidth = 1000
 
-chartHeight = 800
+chartHeight = 1000
 
-priceChartHeight = 500
+priceChartHeight = 800
 
-volumeChartHeight = 300
+volumeChartHeight = 200
 
 renderDiagram :: Int -> Int -> Diagram Cairo -> Graphics.Rendering.Cairo.Render ()
 renderDiagram w h c =
