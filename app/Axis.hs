@@ -49,8 +49,11 @@ bottomAxis s = atop ((showOrigin . fst) a) texts
   where a = axisHorizontally s
         texts = (position . map (\(x,val) -> (p2 (x+12,-7),text val)) . snd) a
 
+-- rotate text by 90
 leftAxis = showOrigin . rotate (90 @@ deg) . fst . axisHorizontally
 
+-- rotate text by -90
 rightAxis = showOrigin . rotate (-90 @@ deg) . fst . axisHorizontally
 
+-- move text to above the axis
 topAxis = showOrigin . rotate (180 @@ deg) . fst . axisHorizontally
