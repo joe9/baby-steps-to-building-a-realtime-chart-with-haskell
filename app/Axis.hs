@@ -1,7 +1,9 @@
+{-# OPTIONS_GHC -fno-warn-partial-type-signatures  #-}
 {-# LANGUAGE FlexibleContexts          #-}
 {-# LANGUAGE GADTs                     #-}
 {-# LANGUAGE NoImplicitPrelude         #-}
 {-# LANGUAGE NoMonomorphismRestriction #-}
+{-# LANGUAGE PartialTypeSignatures     #-}
 {-# LANGUAGE TypeFamilies              #-}
 
 module Axis
@@ -13,15 +15,15 @@ module Axis
 
 import Prelude hiding (Left, Right)
 --
-import Diagrams.Backend.SVG.CmdLine
-import Diagrams.Prelude             hiding (dot, frame)
+import Diagrams.Prelude hiding (dot, frame)
 import Text.Printf
 --
 import Scale
 
 axisHorizontally
-  :: (Scale scale)
-  => scale -> (QDiagram B V2 Double Any,[(Double,String)])
+  :: (Scale scale
+     ,_)
+  => scale -> (QDiagram b V2 Double Any,[(Double,String)])
 axisHorizontally axisScale =
   (position ([(p2 (0,0),axisLine l)
              ,(p2 (-(l / 2),0),tickEnds) -- for start tick
@@ -38,16 +40,19 @@ axisHorizontally axisScale =
 
 type Length = Double
 
-axisLine :: Length -> QDiagram B V2 Double Any
+axisLine :: (_)
+         => Length -> QDiagram b V2 Double Any
 -- xAxis = (showOrigin . lineWidth veryThin . fromVertices) [p2 (0,0),p2 (chartWidth,0)]
 axisLine = (showOrigin . lineWidth veryThin . hrule)
 
 bottomAxis, leftAxis, rightAxis, topAxis
-  :: (Scale scale)
-  => scale -> QDiagram B V2 Double Any
+  :: (Scale scale
+     ,_)
+  => scale -> QDiagram b V2 Double Any
 bottomAxis s = atop ((showOrigin . fst) a) texts
   where a = axisHorizontally s
-        texts = (position . map (\(x,val) -> (p2 (x+10,-9),text val)) . snd) a
+        texts =
+          (position . map (\(x,val) -> (p2 (x + 10,-9),text val)) . snd) a
 
 -- rotate text by 90
 leftAxis = showOrigin . rotate (90 @@ deg) . fst . axisHorizontally
