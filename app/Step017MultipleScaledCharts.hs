@@ -35,12 +35,12 @@ dataSeries =
 xScale, priceScale, volumeScale :: LinearScale
 xScale =
   LinearScale (map (fromIntegral . mdId) dataSeries)
-              margin
+              0
               chartWidth
 
 priceScale =
   LinearScale (concatMap (\d -> [mdBid d,mdAsk d]) dataSeries)
-              margin
+              0
               priceChartHeight
 
 volumeScale =
@@ -55,24 +55,26 @@ frame = (showOrigin . lineWidth ultraThin . rect frameWidth) frameHeight
 
 pChart :: QDiagram B V2 Double Any
 pChart =
-  priceChart xScale
+  showEnvelope
+    (priceChart xScale
              priceScale
              (map (\d -> (mdId d,mdBid d)) dataSeries)
-             (map (\d -> (mdId d,mdAsk d)) dataSeries)
+             (map (\d -> (mdId d,mdAsk d)) dataSeries))
 
 vChart :: QDiagram B V2 Double Any
 vChart =
-  volumeChart xScale
+  showEnvelope
+   (volumeChart xScale
               volumeScale
-              (map (\d -> (mdId d,mdVolume d)) dataSeries)
+              (map (\d -> (mdId d,mdVolume d)) dataSeries))
 
 chart :: QDiagram B V2 Double Any
 chart =
   position [(p2 (frameWidth / 2,frameHeight / 2),frame)
-           ,(p2 (margin,margin + volumeChartHeight)
-            ,(scaleToX chartWidth . scaleToY priceChartHeight) pChart)
+           ,(p2 (margin,margin+volumeChartHeight)
+            , pChart)
            ,(p2 (margin,margin)
-            ,(scaleToX chartWidth . scaleToY volumeChartHeight) vChart)]
+            , vChart)]
 
 -- The size of the chart, in logical units. All the diagrams use the
 --  logical units. The translation from the actual units to the logical
@@ -86,7 +88,7 @@ margin = 20
 
 chartWidth, chartHeight, priceChartHeight, volumeChartHeight
   :: Double
-chartWidth = 400
+chartWidth = 500
 
 chartHeight = 500
 
