@@ -22,11 +22,13 @@ class Scale s  where
   range s = (minRange s,maxRange s)
 
 -- Scale from the domain (input data range) to the range (absolute coordinate).
-scaledPoints :: (Scale x, Scale y) => x -> y -> [( Int,Double)] -> [(P2 Double)]
+scaledPoints
+  :: (Scale x
+     ,Scale y)
+  => x -> y -> [(Int,Double)] -> [(P2 Double)]
 scaledPoints xScale yScale =
-  map (\(i,v) -> p2((toRange xScale . fromIntegral) i,(toRange yScale) v))
+  map (\(i,v) -> p2 ((toRange xScale . fromIntegral) i,(toRange yScale) v))
 
--- Assume Range is always 0 thru 1
 data LinearScale =
   LinearScale {sDomain   :: [Double]
               ,sMinRange :: Double
@@ -35,7 +37,7 @@ data LinearScale =
 linearScaleDomainToRange
   :: LinearScale -> Double -> Double
 linearScaleDomainToRange scale domainValue =
-  ((domainValue - minDomain scale) / (maxDomain scale - minDomain scale) *
+  (((domainValue - minDomain scale) / (maxDomain scale - minDomain scale)) *
    (maxRange scale - minRange scale)) +
   minRange scale
 
@@ -47,7 +49,9 @@ maxDomain = maximum . sDomain
 linearScaleRangeToDomain
   :: LinearScale -> Double -> Double
 linearScaleRangeToDomain scale rangeValue =
-  rangeValue * (maxDomain scale - minDomain scale)
+  (((rangeValue - minRange scale) / (maxRange scale - minRange scale)) *
+   (maxDomain scale - minDomain scale)) +
+  minDomain scale
 
 instance Scale LinearScale where
   domain = sDomain

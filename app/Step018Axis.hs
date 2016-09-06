@@ -55,13 +55,10 @@ frame = (showOrigin . lineWidth ultraThin . rect frameWidth) frameHeight
 xAxis :: QDiagram B V2 Double Any
 xAxis =
   position [(p2 (frameWidth / 2,frameHeight / 2),frame)
-
            ,(p2 (frameWidth / 2,margin),bottomAxis xScale)
            ,(p2 (frameWidth / 2,frameHeight - margin),topAxis xScale)
-
            ,(p2 (margin,frameHeight / 2),leftAxis xScale)
-           ,(p2 (frameHeight - margin,frameHeight / 2),rightAxis xScale)
-           ]
+           ,(p2 (frameHeight - margin,frameHeight / 2),rightAxis xScale)]
 
 --            ,(p2 (frameWidth/2,margin) , axis xScale)
 -- The size of the chart, in logical units. All the diagrams use the
