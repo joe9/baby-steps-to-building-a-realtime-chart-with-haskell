@@ -523,6 +523,7 @@ executable Step020RenderUsingCairo
                      , mtl
                      , linear
                      , colour
+                     , async
   default-language:    Haskell2010
   other-extensions:    DeriveDataTypeable
                      , FlexibleContexts

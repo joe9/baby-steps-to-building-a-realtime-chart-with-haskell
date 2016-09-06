@@ -5,6 +5,8 @@
 
 module Main where
 
+import Control.Concurrent
+import Control.Concurrent.Async
 import Diagrams.Backend.Cairo
 import Diagrams.Backend.Cairo.Internal
 import Diagrams.Prelude                hiding (dot, frame, set)
@@ -139,10 +141,13 @@ main =
      widgetModifyBg canvas
                     StateNormal
                     (Color 65535 65535 65535)
-
-     label <- labelNew (Just ( "initializing" :: String))
-     tableAttachDefaults table label 0 0 (rows - 3) (rows - 2)
-
+     label <- labelNew (Just ("initializing" :: String))
+     tableAttachDefaults table
+                         label
+                         0
+                         columns
+                         (rows - 3)
+                         (rows - 2)
      widgetShowAll window
      _ <-
        onExpose canvas
@@ -153,9 +158,12 @@ main =
                                          (renderDiagram w h chart)
                       return True)
      _ <- onDestroy window mainQuit
-     updateLabel label (show (last dataSeries))
+     a <-
+       async (threadDelay (10 * 1000 * 1000) >>
+              updateLabel label
+                          (show (last dataSeries)))
      mainGUI
+     wait a
 
 updateLabel :: Label -> String -> IO ()
-updateLabel label title = do
-  postGUISync (labelSetText label title)
+updateLabel label title = do postGUISync (labelSetText label title)
