@@ -80,18 +80,61 @@ main =
                       drawin <- widgetGetDrawWindow canvas
                       (renderWithDrawable drawin .
                        renderDiagram w h . chart . dataSeriesList) dataSeries
-                      return True)
+                      return False)
      _ <- onDestroy window mainQuit
+--      (updateLabel label . show . last) dataSeries
+--      updateChart canvas dataSeries
      a <-
        async (threadDelay (10 * 1000 * 1000) >>
-              updateLabel label
-                          (show (last dataSeries)))
+              updatedData canvas label dataSeries)
      mainGUI
-     wait a
+     cancel a
 
 updateLabel :: Label -> String -> IO ()
-updateLabel label title = do postGUISync (labelSetText label title)
+updateLabel label title = labelSetText label title
 
 dataSeriesList
   :: [MyData] -> [(Int,Bid,Ask,Volume)]
 dataSeriesList = map (\d -> (mdId d,mdBid d,mdAsk d,mdVolume d))
+
+updatedData
+  :: WidgetClass widget
+  => widget -> Label -> [MyData] -> IO b
+updatedData canvas label series =
+  do postGUISync
+       ((updateLabel label . show . last) series >> updateChart canvas series)
+     threadDelay (1 * 1000 * 1000)
+     updatedData canvas
+                 label
+                 (addAnother series)
+
+addAnother :: [MyData] -> [MyData]
+addAnother ds =
+  ds ++
+  [MyData (1 + mdId d)
+          (1 + mdBid d)
+          (1 + mdAsk d)
+          (1 + mdVolume d)]
+  where d = last ds
+
+--     widgetModifyBg canvas
+--                        StateNormal
+--                        (Color 65535 65535 65535)
+-- (renderWithDrawable drawin . renderDiagram w h . chart . dataSeriesList) series
+updateChart :: WidgetClass widget
+            => widget -> [MyData] -> IO ()
+updateChart canvas series =
+  do
+     widgetModifyBg canvas
+                    StateNormal
+                    (Color 65535 65535 65535)
+     widgetQueueDraw canvas
+     _ <-
+       onExpose canvas
+                (\_ ->
+                   do (w,h) <- widgetGetSize canvas
+                      drawin <- widgetGetDrawWindow canvas
+                      (renderWithDrawable drawin .
+                       renderDiagram w h . chart . dataSeriesList) series
+                      return False)
+     widgetQueueDraw canvas

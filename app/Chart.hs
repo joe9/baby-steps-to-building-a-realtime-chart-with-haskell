@@ -1,4 +1,4 @@
-{-# OPTIONS_GHC -fno-warn-partial-type-signatures   #-}
+{-# OPTIONS_GHC -fno-warn-partial-type-signatures     #-}
 {-# LANGUAGE FlexibleContexts          #-}
 {-# LANGUAGE GADTs                     #-}
 {-# LANGUAGE NoMonomorphismRestriction #-}
