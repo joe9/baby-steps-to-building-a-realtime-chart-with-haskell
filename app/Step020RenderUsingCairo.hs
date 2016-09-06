@@ -139,6 +139,10 @@ main =
      widgetModifyBg canvas
                     StateNormal
                     (Color 65535 65535 65535)
+
+     label <- labelNew (Just ( "initializing" :: String))
+     tableAttachDefaults table label 0 0 (rows - 3) (rows - 2)
+
      widgetShowAll window
      _ <-
        onExpose canvas
@@ -149,4 +153,9 @@ main =
                                          (renderDiagram w h chart)
                       return True)
      _ <- onDestroy window mainQuit
+     updateLabel label (show (last dataSeries))
      mainGUI
+
+updateLabel :: Label -> String -> IO ()
+updateLabel label title = do
+  postGUISync (labelSetText label title)
