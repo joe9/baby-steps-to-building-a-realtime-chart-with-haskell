@@ -22,13 +22,16 @@ priceChart
   => xscale -> yscale -> [Bid] -> [Ask] -> QDiagram B V2 Double Any
 priceChart xScale yScale bids asks =
   (showOrigin . position)
-    ([(p2 (chartWidth / 2,0),xAxis),(p2 (0,chartHeight / 2),yAxis)] <>
+    ([(p2 (chartWidth / 2,0),xAxis chartWidth)
+     ,(p2 (0,chartHeight / 2),yAxis chartHeight)] <>
      [(head areaVertices,areaBetweenBidAndAsk areaVertices)] <>
      zip scaledBids (repeat dot) <>
      zip scaledAsks (repeat dot))
   where scaledBids = scaledPoints xScale yScale bids
         scaledAsks = scaledPoints xScale yScale asks
         areaVertices = scaledBids ++ reverse scaledAsks
+        chartWidth = maxRange xScale - minRange xScale
+        chartHeight = maxRange yScale - minRange yScale
 
 -- Draw a single blue coloured dot showing the local origin.
 -- Related conversation on #diagrams:
@@ -42,11 +45,14 @@ priceChart xScale yScale bids asks =
 dot :: Diagram B
 dot = (showOrigin . fillColor blue . circle) 1 -- 0.07
 
-xAxis, yAxis :: QDiagram B V2 Double Any
--- xAxis = (showOrigin . lineWidth veryThin . fromVertices) [p2 (0,0),p2 (chartWidth,0)]
-xAxis = (showOrigin . lineWidth veryThin . hrule) chartWidth
+type Length = Double
 
-yAxis = (showOrigin . lineWidth veryThin . vrule) chartHeight
+xAxis, yAxis
+  :: Length -> QDiagram B V2 Double Any
+-- xAxis = (showOrigin . lineWidth veryThin . fromVertices) [p2 (0,0),p2 (chartWidth,0)]
+xAxis = (showOrigin . lineWidth veryThin . hrule)
+
+yAxis = (showOrigin . lineWidth veryThin . vrule)
 
 -- Overlay the dot on the above frame.
 -- Do not assume that the frame will be positioned at the
@@ -57,9 +63,3 @@ areaBetweenBidAndAsk =
   showOrigin .
   lineColor lightpink .
   fillColor lightpink . strokeLoop . closeLine . lineFromVertices
-
-chartWidth :: Double
-chartWidth = 100
-
-chartHeight :: Double
-chartHeight = 100

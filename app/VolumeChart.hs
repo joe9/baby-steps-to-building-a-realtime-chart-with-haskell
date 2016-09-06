@@ -20,24 +20,21 @@ volumeChart
   => xscale -> yscale -> [Volume] -> QDiagram B V2 Double Any
 volumeChart xScale yScale volumes =
   (showOrigin . position)
-    ([(p2 (chartWidth / 2,0),xAxis),(p2 (0,chartHeight / 2),yAxis)] <>
+    ([(p2 (chartWidth / 2,0),xAxis chartWidth),(p2 (0,chartHeight / 2),yAxis chartHeight)] <>
      zip scaledVolumes (repeat dot) <>
      bars)
   where bars =
-          map (uncurry (bar xScale yScale (barWidth (length volumes)))) volumes
+          map (uncurry (bar xScale yScale (barWidth chartWidth (length volumes)))) volumes
         scaledVolumes = scaledPoints xScale yScale volumes
+        chartWidth = maxRange xScale - minRange xScale
+        chartHeight = maxRange yScale - minRange yScale
 
-xAxis, yAxis :: QDiagram B V2 Double Any
+type Length = Double
+xAxis, yAxis :: Length -> QDiagram B V2 Double Any
 -- xAxis = (showOrigin . lineWidth veryThin . fromVertices) [p2 (0,0),p2 (chartWidth,0)]
-xAxis = (showOrigin . lineWidth veryThin . hrule) chartWidth
+xAxis = (showOrigin . lineWidth veryThin . hrule)
 
-yAxis = (showOrigin . lineWidth veryThin . vrule) chartHeight
-
-chartWidth :: Double
-chartWidth = 100
-
-chartHeight :: Double
-chartHeight = 100
+yAxis = (showOrigin . lineWidth veryThin . vrule)
 
 -- type Low = Double
 type High = Double
@@ -64,8 +61,8 @@ bar xscale yscale barwidth xValue yValue =
 
 type NumberOfEntries = Int
 
-barWidth :: NumberOfEntries -> Double
-barWidth n = chartWidth / fromIntegral n
+barWidth :: Double -> NumberOfEntries -> Double
+barWidth chartWidth n = chartWidth / fromIntegral n
 
 -- Draw a single blue coloured dot showing the local origin.
 -- Related conversation on #diagrams:
