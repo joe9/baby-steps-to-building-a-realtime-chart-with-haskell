@@ -6,7 +6,10 @@
 
 module ChartCairo where
 
-import Graphics.Rendering.Cairo        hiding (scale)
+import Graphics.Rendering.Cairo        hiding (scale,x,y)
+import Graphics.Rendering.Cairo.Matrix
+import Data.Colour.Names
+import Linear.V2
 --
 -- import AxisCairo
 import PriceGraphCairo
@@ -19,24 +22,33 @@ xScale, priceScale, volumeScale
 xScale dataSeries =
   LinearScale (map (\(i,_,_,_) -> fromIntegral i) dataSeries)
               margin
-              ( margin + chartWidth)
+              (margin + chartWidth)
 
 priceScale dataSeries =
   LinearScale (concatMap (\(_,b,a,_) -> [b,a]) dataSeries)
-              (margin + volumeChartHeight + priceChartHeight)
               (margin + volumeChartHeight)
+              (margin + volumeChartHeight + priceChartHeight)
+
+-- priceScale dataSeries =
+--   LinearScale (concatMap (\(_,b,a,_) -> [b,a]) dataSeries)
+--               (margin + priceChartHeight)
+--               margin
+
+-- volumeScale dataSeries =
+--   LinearScale (map (\(_,_,_,v) -> v) dataSeries)
+--               (margin + priceChartHeight + volumeChartHeight)
+--               (margin + priceChartHeight)
 
 volumeScale dataSeries =
   LinearScale (map (\(_,_,_,v) -> v) dataSeries)
-              (margin + volumeChartHeight)
               margin
+              (margin + volumeChartHeight)
 
 -- Add a frame for the chart. The frame dimensions are the width and
 --  height provided on the command line.
 frame :: Width -> Height -> Render ()
 frame w h = do
-    setSourceRGB 1 1 0
-    setLineWidth 5
+    useColor black
 
     moveTo 0 0
     lineTo w 0
@@ -62,7 +74,18 @@ vChart dataSeries =
 
 chart
   :: Width -> Height -> [(Int,Bid,Ask,Volume)] -> Render ()
-chart w h dataSeries =
+chart w h dataSeries = do
+  dot (V2 margin margin)
+  x <- getMatrix
+  liftIO ( print x )
+  setMatrix (Matrix 1 0 0 (-1) 0 0)
+  y <- getMatrix
+  liftIO ( print y )
+  dot (V2 margin margin)
+  transform (Matrix 1 0 0 (-1) 0 0)
+  z <- getMatrix
+  liftIO ( print z )
+  dot (V2 margin margin)
 --   position [(p2 (frameWidth / 2,frameHeight / 2),frame)
 --            ,(p2 (margin,margin + volumeChartHeight),pChart dataSeries)
 --            ,(p2 (margin,margin),vChart dataSeries)
@@ -80,7 +103,7 @@ chart w h dataSeries =
 --             ,rightAxis (priceScale dataSeries))
 --            ,(p2 (frameWidth - margin,margin + (volumeChartHeight / 2))
 --             ,rightAxis (volumeScale dataSeries))]
-  frame w h >> pChart dataSeries >> vChart dataSeries
+--   frame w h >> pChart dataSeries >> vChart dataSeries
 
 -- The size of the chart, in logical units. All the diagrams use the
 --  logical units. The translation from the actual units to the logical
