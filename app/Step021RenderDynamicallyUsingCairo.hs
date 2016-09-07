@@ -35,9 +35,13 @@ dataSeries =
   ,MyData 9 1.17 1.25 5000
   ,MyData 10 1.1 1.15 0]
 
+-- http://code.haskell.org/gtk2hs/docs/tutorial/Tutorial_Port/app1.xhtml
 renderDiagram
   :: Int -> Int -> Diagram Cairo -> Graphics.Rendering.Cairo.Render ()
 renderDiagram w h c =
+  -- clear the drawing window
+  setSourceRGB 1 1 1 >> paint >>
+  -- then draw the diagram
   snd (renderDia Cairo
                  ((CairoOptions
                      ""
@@ -82,8 +86,6 @@ main =
                        renderDiagram w h . chart . dataSeriesList) dataSeries
                       return False)
      _ <- onDestroy window mainQuit
---      (updateLabel label . show . last) dataSeries
---      updateChart canvas dataSeries
      a <-
        async (threadDelay (10 * 1000 * 1000) >>
               updatedData canvas label dataSeries)
@@ -101,7 +103,7 @@ updatedData
   :: WidgetClass widget
   => widget -> Label -> [MyData] -> IO b
 updatedData canvas label series =
-  do postGUISync
+  do postGUIAsync
        ((updateLabel label . show . last) series >> updateChart canvas series)
      threadDelay (1 * 1000 * 1000)
      updatedData canvas
@@ -125,10 +127,6 @@ updateChart :: WidgetClass widget
             => widget -> [MyData] -> IO ()
 updateChart canvas series =
   do
-     widgetModifyBg canvas
-                    StateNormal
-                    (Color 65535 65535 65535)
-     widgetQueueDraw canvas
      _ <-
        onExpose canvas
                 (\_ ->
