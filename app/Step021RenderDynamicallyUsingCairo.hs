@@ -119,10 +119,9 @@ addAnother ds =
           (1 + mdVolume d)]
   where d = last ds
 
---     widgetModifyBg canvas
---                        StateNormal
---                        (Color 65535 65535 65535)
--- (renderWithDrawable drawin . renderDiagram w h . chart . dataSeriesList) series
+-- http://stackoverflow.com/questions/5293898/how-to-pass-state-between-event-handlers-in-gtk2hs
+-- the below is not a working solution. Use MVar or TVar or IORef as
+-- recommended in the SO answer above
 updateChart :: WidgetClass widget
             => widget -> [MyData] -> IO ()
 updateChart canvas series =
