@@ -75,18 +75,19 @@ vChart dataSeries =
 chart
   :: Width -> Height -> [(Int,Bid,Ask,Volume)] -> Render ()
 chart w h dataSeries = do
-  dot (V2 margin margin)
-  x <- getMatrix
-  liftIO ( print x )
-  setMatrix (Matrix 1 0 0 (-1) 0 0)
-  y <- getMatrix
-  liftIO ( print y )
-  dot (V2 margin margin)
+--   frame w h
+--   dot (V2 margin margin)
+--   dot (V2 (w - margin) (h - margin))
+--   x <- getMatrix
+--   liftIO ( print x )
+-- --   setMatrix (Matrix 1 0 0 (-1) 0 0)
+-- --   y <- getMatrix
+-- --   liftIO ( print y )
   transform (Matrix 1 0 0 (-1) 0 0)
-  translate 0 h
-  z <- getMatrix
-  liftIO ( print z )
-  dot (V2 margin margin)
+  translate 0 (-h)
+--   z <- getMatrix
+--   liftIO ( print z )
+--   dot (V2 margin margin)
 --   position [(p2 (frameWidth / 2,frameHeight / 2),frame)
 --            ,(p2 (margin,margin + volumeChartHeight),pChart dataSeries)
 --            ,(p2 (margin,margin),vChart dataSeries)
@@ -104,7 +105,7 @@ chart w h dataSeries = do
 --             ,rightAxis (priceScale dataSeries))
 --            ,(p2 (frameWidth - margin,margin + (volumeChartHeight / 2))
 --             ,rightAxis (volumeScale dataSeries))]
---   frame w h >> pChart dataSeries >> vChart dataSeries
+  frame w h >> pChart dataSeries >> vChart dataSeries
 
 -- The size of the chart, in logical units. All the diagrams use the
 --  logical units. The translation from the actual units to the logical
