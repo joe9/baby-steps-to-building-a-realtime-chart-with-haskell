@@ -7,7 +7,7 @@
 module ChartCairo where
 
 import Graphics.Rendering.Cairo        hiding (scale,x,y)
-import Graphics.Rendering.Cairo.Matrix
+import Graphics.Rendering.Cairo.Matrix hiding (translate)
 import Data.Colour.Names
 import Linear.V2
 --
@@ -83,6 +83,7 @@ chart w h dataSeries = do
   liftIO ( print y )
   dot (V2 margin margin)
   transform (Matrix 1 0 0 (-1) 0 0)
+  translate 0 h
   z <- getMatrix
   liftIO ( print z )
   dot (V2 margin margin)
