@@ -563,9 +563,9 @@ executable Step021RenderDynamicallyUsingCairo
                      , UndecidableInstances
                      , OverloadedStrings
 
-executable Step022RenderDynamicallyUsingCairoAndMVar
+executable Step022RenderDynamicallyUsingCairoAndIORef
   hs-source-dirs:      app
-  main-is:             Step022RenderDynamicallyUsingCairoAndMVar.hs
+  main-is:             Step022RenderDynamicallyUsingCairoAndIORef.hs
   other-modules:       Scale
                      , PriceGraph
                      , VolumeGraph
