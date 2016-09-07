@@ -12,6 +12,7 @@ import Graphics.Rendering.Cairo        hiding (scale, x, y)
 import Linear.V2
 --
 import ScaleCairo
+import Types hiding (Volume)
 
 type Volume = (Int,Double)
 
@@ -19,18 +20,15 @@ volumeGraph
   :: (Scale xscale
      ,Scale yscale)
   => xscale -> yscale -> [Volume] -> Render ()
-volumeGraph xScale yScale volumes = undefined
+volumeGraph xScale yScale volumes =
+  mapM_ dot scaledVolumes
+  >> mapM_ (uncurry (bar xScale yScale (barWidth chartWidth (length volumes)))) volumes
+  where scaledVolumes = scaledPoints xScale yScale volumes
+        chartWidth = maxRange xScale - minRange xScale
+
 --   (showOrigin . position) (zip scaledVolumes (repeat dot) <> bars)
 --   where bars =
 --           map (uncurry (bar xScale yScale (barWidth chartWidth (length volumes)))) volumes
---         scaledVolumes = scaledPoints xScale yScale volumes
---         chartWidth = maxRange xScale - minRange xScale
-
---         chartHeight = maxRange yScale - minRange yScale
--- type Low = Double
-type High = Double
-
-type Width = Double
 
 type NumberOfEntry = Int
 
@@ -42,9 +40,17 @@ bar :: (Scale xscale
     -> yscale
     -> Width
     -> NumberOfEntry
-    -> High
-    -> (V2 Double,Render ())
-bar xscale yscale barwidth xValue yValue =
+    -> Double
+    -> Render ()
+bar xscale yscale barwidth xValue yValue = do
+                setSourceRGB 1 1 0
+                rectangle
+                     (toRange xscale (fromIntegral xValue) - (barwidth / 2)) -- x starting point
+                     (toRange yscale 0) -- y starting ponit
+                     barwidth -- width
+                     (toRange yscale yValue) -- height
+                fill
+
 --   (p2 (toRange xscale (fromIntegral xValue),(toRange yscale yValue) / 2)
 --   ,(showOrigin . vbar barwidth) (toRange yscale yValue - toRange yscale 0))
 --   where vbar =

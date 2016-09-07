@@ -23,13 +23,13 @@ xScale dataSeries =
 
 priceScale dataSeries =
   LinearScale (concatMap (\(_,b,a,_) -> [b,a]) dataSeries)
-              (margin + volumeChartHeight)
               (margin + volumeChartHeight + priceChartHeight)
+              (margin + volumeChartHeight)
 
 volumeScale dataSeries =
   LinearScale (map (\(_,_,_,v) -> v) dataSeries)
-              margin
               (margin + volumeChartHeight)
+              margin
 
 -- Add a frame for the chart. The frame dimensions are the width and
 --  height provided on the command line.
