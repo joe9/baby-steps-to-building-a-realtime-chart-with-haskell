@@ -16,27 +16,7 @@ import           Graphics.UI.Gtk                 hiding (Scale,
 --
 import ChartCairo
 import Types
-
-data MyData =
-  MyData {mdId     :: Int
-         ,mdBid    :: Double
-         ,mdAsk    :: Double
-         ,mdVolume :: Double}
-  deriving (Eq,Read,Show)
-
-dataSeries :: IntMap.IntMap MyData
-dataSeries =
-  (IntMap.fromList . map (\d -> (mdId d,d)))
-    [MyData 1 1.19 1.26 1000
-    ,MyData 2 1.22 1.27 2000
-    ,MyData 3 1.27 1.37 1000
-    ,MyData 4 1.37 1.47 0
-    ,MyData 5 1.67 1.97 3000
-    ,MyData 6 1.57 1.67 1000
-    ,MyData 7 1.47 1.57 1000
-    ,MyData 8 1.27 1.37 500
-    ,MyData 9 1.17 1.25 5000
-    ,MyData 10 1.1 1.15 0]
+import MyData
 
 -- http://code.haskell.org/gtk2hs/docs/tutorial/Tutorial_Port/app1.xhtml
 -- http://stackoverflow.com/questions/26848694/cairo-flips-a-drawing
@@ -63,7 +43,8 @@ renderChart f w h ds = do
 
 main :: IO ()
 main =
-  do ref <- newIORef dataSeries
+  do dataSeries <- buildDataSeries
+     ref <- newIORef dataSeries
      _ <- initGUI
      window <- windowNew
      let rows = 30
