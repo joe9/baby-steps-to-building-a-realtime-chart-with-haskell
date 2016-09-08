@@ -1,8 +1,8 @@
-name:                baby-steps-to-building-a-chart-with-diagrams
+name:                baby-steps-to-building-a-realtime-chart-with-haskell
 version:             0.1.0.0
 synopsis:            Initial project template from stack
 description:         Please see README.md
-homepage:            https://github.com/githubuser/baby-steps-to-building-a-chart-with-diagrams#readme
+homepage:            https://github.com/githubuser/baby-steps-to-building-a-realtime-chart-with-haskell#readme
 license:             BSD3
 license-file:        LICENSE
 author:              Author name here
@@ -19,20 +19,20 @@ library
   build-depends:       base >= 4.7 && < 5
   default-language:    Haskell2010
 
-executable baby-steps-to-building-a-chart-with-diagrams-exe
-  hs-source-dirs:      app
-  main-is:             Main.hs
-  ghc-options:         -threaded -rtsopts -with-rtsopts=-N
-  build-depends:       base
-                     , baby-steps-to-building-a-chart-with-diagrams
-  default-language:    Haskell2010
+-- executable baby-steps-to-building-a-realtime-chart-with-haskell-exe
+--   hs-source-dirs:      app
+--   main-is:             Main.hs
+--   ghc-options:         -threaded -rtsopts -with-rtsopts=-N
+--   build-depends:       base
+--                      , baby-steps-to-building-a-realtime-chart-with-haskell
+--   default-language:    Haskell2010
 
 executable Step001AddDot
   hs-source-dirs:      app
   main-is:             Step001AddDot.lhs
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N
   build-depends:       base
-                     , baby-steps-to-building-a-chart-with-diagrams
+                     , baby-steps-to-building-a-realtime-chart-with-haskell
                      , gtk
                      , groom
                      , cairo
@@ -57,7 +57,7 @@ executable Step002AddColouredDot
   main-is:             Step002AddColouredDot.lhs
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N
   build-depends:       base
-                     , baby-steps-to-building-a-chart-with-diagrams
+                     , baby-steps-to-building-a-realtime-chart-with-haskell
                      , gtk
                      , groom
                      , cairo
@@ -82,7 +82,7 @@ executable Step003AddDotAtXY
   main-is:             Step003AddDotAtXY.lhs
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N
   build-depends:       base
-                     , baby-steps-to-building-a-chart-with-diagrams
+                     , baby-steps-to-building-a-realtime-chart-with-haskell
                      , gtk
                      , groom
                      , cairo
@@ -107,7 +107,7 @@ executable Step004AddBoundingFrame
   main-is:             Step004AddBoundingFrame.lhs
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N
   build-depends:       base
-                     , baby-steps-to-building-a-chart-with-diagrams
+                     , baby-steps-to-building-a-realtime-chart-with-haskell
                      , gtk
                      , groom
                      , cairo
@@ -132,7 +132,7 @@ executable Step005AddDotAtXYWithBoundingFrame
   main-is:             Step005AddDotAtXYWithBoundingFrame.lhs
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N
   build-depends:       base
-                     , baby-steps-to-building-a-chart-with-diagrams
+                     , baby-steps-to-building-a-realtime-chart-with-haskell
                      , gtk
                      , groom
                      , cairo
@@ -157,7 +157,7 @@ executable Step006AddMultipleDotsAtXYsWithBoundingFrame
   main-is:             Step006AddMultipleDotsAtXYsWithBoundingFrame.lhs
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N
   build-depends:       base
-                     , baby-steps-to-building-a-chart-with-diagrams
+                     , baby-steps-to-building-a-realtime-chart-with-haskell
                      , gtk
                      , groom
                      , cairo
@@ -182,7 +182,7 @@ executable Step007BuildDotsFromDataSeries
   main-is:             Step007BuildDotsFromDataSeries.lhs
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N
   build-depends:       base
-                     , baby-steps-to-building-a-chart-with-diagrams
+                     , baby-steps-to-building-a-realtime-chart-with-haskell
                      , gtk
                      , groom
                      , cairo
@@ -207,7 +207,7 @@ executable Step008DrawPathAndDots
   main-is:             Step008DrawPathAndDots.lhs
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N
   build-depends:       base
-                     , baby-steps-to-building-a-chart-with-diagrams
+                     , baby-steps-to-building-a-realtime-chart-with-haskell
                      , gtk
                      , groom
                      , cairo
@@ -232,7 +232,7 @@ executable Step009AddAxis
   main-is:             Step009AddAxis.lhs
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N
   build-depends:       base
-                     , baby-steps-to-building-a-chart-with-diagrams
+                     , baby-steps-to-building-a-realtime-chart-with-haskell
                      , gtk
                      , groom
                      , cairo
@@ -257,7 +257,7 @@ executable Step010UnderstandingTranslate
   main-is:             Step010UnderstandingTranslate.lhs
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N
   build-depends:       base
-                     , baby-steps-to-building-a-chart-with-diagrams
+                     , baby-steps-to-building-a-realtime-chart-with-haskell
                      , gtk
                      , groom
                      , cairo
@@ -282,7 +282,7 @@ executable Step011MultipleVariables
   main-is:             Step011MultipleVariables.lhs
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N
   build-depends:       base
-                     , baby-steps-to-building-a-chart-with-diagrams
+                     , baby-steps-to-building-a-realtime-chart-with-haskell
                      , gtk
                      , groom
                      , cairo
@@ -307,7 +307,7 @@ executable Step012Area
   main-is:             Step012Area.lhs
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N
   build-depends:       base
-                     , baby-steps-to-building-a-chart-with-diagrams
+                     , baby-steps-to-building-a-realtime-chart-with-haskell
                      , gtk
                      , groom
                      , cairo
@@ -334,7 +334,7 @@ executable Step014MultipleVariablesUsingScaleModule
   other-modules:       Scale
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N
   build-depends:       base
-                     , baby-steps-to-building-a-chart-with-diagrams
+                     , baby-steps-to-building-a-realtime-chart-with-haskell
                      , gtk
                      , groom
                      , cairo
@@ -361,7 +361,7 @@ executable Step015MoreLocationIndependent
   other-modules:       Scale
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N
   build-depends:       base
-                     , baby-steps-to-building-a-chart-with-diagrams
+                     , baby-steps-to-building-a-realtime-chart-with-haskell
                      , gtk
                      , groom
                      , cairo
@@ -390,7 +390,7 @@ executable Step016MultipleCharts
                      , VolumeChartOwnScale
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N
   build-depends:       base
-                     , baby-steps-to-building-a-chart-with-diagrams
+                     , baby-steps-to-building-a-realtime-chart-with-haskell
                      , gtk
                      , groom
                      , cairo
@@ -419,7 +419,7 @@ executable Step017MultipleScaledCharts
                      , VolumeChart
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N
   build-depends:       base
-                     , baby-steps-to-building-a-chart-with-diagrams
+                     , baby-steps-to-building-a-realtime-chart-with-haskell
                      , gtk
                      , groom
                      , cairo
@@ -449,7 +449,7 @@ executable Step018Axis
                      , Axis
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N
   build-depends:       base
-                     , baby-steps-to-building-a-chart-with-diagrams
+                     , baby-steps-to-building-a-realtime-chart-with-haskell
                      , gtk
                      , groom
                      , cairo
@@ -479,7 +479,7 @@ executable Step019UsingAxis
                      , Axis
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N
   build-depends:       base
-                     , baby-steps-to-building-a-chart-with-diagrams
+                     , baby-steps-to-building-a-realtime-chart-with-haskell
                      , gtk
                      , groom
                      , cairo
@@ -509,7 +509,7 @@ executable Step020RenderUsingCairo
                      , Axis
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N
   build-depends:       base
-                     , baby-steps-to-building-a-chart-with-diagrams
+                     , baby-steps-to-building-a-realtime-chart-with-haskell
                      , gtk
                      , groom
                      , cairo
@@ -541,7 +541,7 @@ executable Step021RenderDynamicallyUsingCairo
                      , Chart
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N
   build-depends:       base
-                     , baby-steps-to-building-a-chart-with-diagrams
+                     , baby-steps-to-building-a-realtime-chart-with-haskell
                      , gtk
                      , groom
                      , cairo
@@ -573,7 +573,7 @@ executable Step022RenderDynamicallyUsingCairoAndIORef
                      , Chart
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N
   build-depends:       base
-                     , baby-steps-to-building-a-chart-with-diagrams
+                     , baby-steps-to-building-a-realtime-chart-with-haskell
                      , gtk
                      , groom
                      , cairo
@@ -605,7 +605,7 @@ executable Step023RenderDynamicallyUsingCairoIORefAndIntMap
                      , Chart
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N
   build-depends:       base
-                     , baby-steps-to-building-a-chart-with-diagrams
+                     , baby-steps-to-building-a-realtime-chart-with-haskell
                      , gtk
                      , groom
                      , cairo
@@ -639,7 +639,7 @@ executable Step024CairoOnly
                      , Types
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N
   build-depends:       base
-                     , baby-steps-to-building-a-chart-with-diagrams
+                     , baby-steps-to-building-a-realtime-chart-with-haskell
                      , gtk
                      , groom
                      , cairo
@@ -662,15 +662,51 @@ executable Step024CairoOnly
                      , UndecidableInstances
                      , OverloadedStrings
 
-test-suite baby-steps-to-building-a-chart-with-diagrams-test
-  type:                exitcode-stdio-1.0
-  hs-source-dirs:      test
-  main-is:             Spec.hs
-  build-depends:       base
-                     , baby-steps-to-building-a-chart-with-diagrams
+executable Step025Gloss
+  hs-source-dirs:      app
+  main-is:             Step025Gloss.hs
+  other-modules:       ScaleV2
+                     , PriceGraphCairo
+                     , VolumeGraphCairo
+                     , AxisCairo
+                     , ChartCairo
+                     , Types
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N
+  build-depends:       base
+                     , baby-steps-to-building-a-realtime-chart-with-haskell
+                     , gtk
+                     , groom
+                     , cairo
+                     , safe
+                     , diagrams
+                     , diagrams-cairo
+                     , diagrams-lib
+                     , diagrams-svg
+                     , diagrams-core
+                     , SVGFonts
+                     , mtl
+                     , linear
+                     , colour
+                     , async
+                     , containers
+                     , gloss
+                     , gloss-raster
   default-language:    Haskell2010
+  other-extensions:    DeriveDataTypeable
+                     , FlexibleContexts
+                     , TemplateHaskell
+                     , UndecidableInstances
+                     , OverloadedStrings
+
+-- test-suite baby-steps-to-building-a-realtime-chart-with-haskell-test
+--   type:                exitcode-stdio-1.0
+--   hs-source-dirs:      test
+--   main-is:             Spec.hs
+--   build-depends:       base
+--                      , baby-steps-to-building-a-realtime-chart-with-haskell
+--   ghc-options:         -threaded -rtsopts -with-rtsopts=-N
+--   default-language:    Haskell2010
 
 source-repository head
   type:     git
-  location: https://github.com/githubuser/baby-steps-to-building-a-chart-with-diagrams
+  location: https://github.com/githubuser/baby-steps-to-building-a-realtime-chart-with-haskell
