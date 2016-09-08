@@ -1,1 +1,1 @@
-baby-steps-to-building-a-chart-with-diagrams
+These are the steps to building a realtime chart using haskell.
