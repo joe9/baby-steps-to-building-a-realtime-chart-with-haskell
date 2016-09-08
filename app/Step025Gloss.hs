@@ -7,12 +7,12 @@ module Main where
 
 import           Control.Concurrent
 import           Control.Concurrent.Async
-import qualified Data.IntMap.Strict              as IntMap
+import qualified Data.IntMap.Strict                  as IntMap
 import           Data.IORef
-import           Graphics.Gloss
+import           Graphics.Gloss.Interface.IO.Animate
 --
-import ChartCairo
-import Types
+import ChartGloss
+import TypesGloss
 
 data MyData =
   MyData {mdId     :: Int
@@ -37,61 +37,52 @@ dataSeries =
 
 -- http://code.haskell.org/gtk2hs/docs/tutorial/Tutorial_Port/app1.xhtml
 -- http://stackoverflow.com/questions/26848694/cairo-flips-a-drawing
--- renderChart :: (Width -> Height -> [(Int,Bid,Ask,Volume)] -> Render ())
---             -> Width
---             -> Height
---             -> [(Int,Bid,Ask,Volume)]
---             -> Graphics.Rendering.Cairo.Render ()
--- renderChart f w h ds = do
--- --   m <- getMatrix
--- --   liftIO ( print m )
---   -- cairo sets the origin (0,0) in the top left corner
---   -- it is easier when the origin (0,0) is in the bottom left corner
--- --   transform (Matrix 1 0 0 (-1) 0 0) >> translate 0 (-h)
---   -- below line is the same as the above
---   setMatrix (Matrix 1 0 0 (-1) 0 h)
--- --   n <- getMatrix
--- --   liftIO ( print n )
---   -- clear the drawing window
---   setSourceRGB 1 1 1
---   paint
---   -- then draw the diagram
---   f w h ds
+renderChart :: IORef (IntMap.IntMap MyData)
+            -> Width
+            -> Height
+            -> Float -- time
+            -> IO Picture
+renderChart ref w h _ =
+  do series <- readIORef ref
+     -- then draw the diagram
+     return
+       (Pictures [chart w h (dataSeriesList series)
+                 ,(translate (-100)
+                             (-100) .
+                   scale 0.1 0.1 . text . show . IntMap.findMax) series])
 
 main :: IO ()
-main = do
- ref <- newIORef dataSeries
- display (InWindow "Nice Window" (200,200) (10,10)) white (Circle 80)
---  a <- async (threadDelay (10 * 1000 * 1000) >>
---             updatedData ref canvas label dataSeries)
---  cancel a
+main =
+  do ref <- newIORef dataSeries
+     a <- async (threadDelay (1 * 1000 * 1000) >> updatedData ref dataSeries)
+     let w = 100
+         h = 100
+     animateIO (InWindow "Realtime Chart"
+                         (w,h)
+                         (0,0))
+               white
+               (renderChart ref w h)
+               controllerSetRedraw
+     cancel a
 
 -- updateLabel :: Label -> String -> IO ()
 -- updateLabel label title = labelSetText label title
-
 dataSeriesList
   :: IntMap.IntMap MyData -> [(Int,Bid,Ask,Volume)]
 dataSeriesList =
   fmap (\(_,d) -> (mdId d,mdBid d,mdAsk d,mdVolume d)) . IntMap.toList
 
--- -- http://stackoverflow.com/questions/5293898/how-to-pass-state-between-event-handlers-in-gtk2hs
--- -- the below is not a working solution. Use MVar or TVar or IORef as
--- -- recommended in the SO answer above
--- updatedData :: WidgetClass widget
---             => IORef (IntMap.IntMap MyData)
---             -> widget
---             -> Label
---             -> IntMap.IntMap MyData
---             -> IO b
--- updatedData ref canvas label series =
---   do let newSeries = addAnother series
---      atomicModifyIORef' ref
---                         (\_ -> (newSeries,()))
---      postGUIAsync
---        ((updateLabel label . show . IntMap.findMax) newSeries >>
---         widgetQueueDraw canvas)
---      threadDelay (1 * 1000 * 1000)
---      updatedData ref canvas label newSeries
+-- http://stackoverflow.com/questions/5293898/how-to-pass-state-between-event-handlers-in-gtk2hs
+-- the below is not a working solution. Use MVar or TVar or IORef as
+-- recommended in the SO answer above
+updatedData
+  :: IORef (IntMap.IntMap MyData) -> IntMap.IntMap MyData -> IO b
+updatedData ref series =
+  do let newSeries = addAnother series
+     atomicModifyIORef' ref
+                        (\_ -> (newSeries,()))
+     threadDelay (1 * 1000 * 1000)
+     updatedData ref newSeries
 
 addAnother
   :: IntMap.IntMap MyData -> IntMap.IntMap MyData
