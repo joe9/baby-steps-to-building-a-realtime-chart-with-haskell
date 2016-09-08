@@ -32,5 +32,5 @@ useColor = useRGB . toSRGB
 dot :: V2 Double -> Render ()
 dot (V2 x y) = do
   useColor black
-  arc x y 10 0 (2 * pi) -- 0.07
+  arc x y 1 0 (2 * pi) -- 0.07
   fill

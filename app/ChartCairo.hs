@@ -7,9 +7,7 @@
 module ChartCairo where
 
 import Graphics.Rendering.Cairo        hiding (scale,x,y)
-import Graphics.Rendering.Cairo.Matrix hiding (translate)
 import Data.Colour.Names
-import Linear.V2
 --
 -- import AxisCairo
 import PriceGraphCairo
@@ -18,31 +16,21 @@ import Types
 import VolumeGraphCairo
 
 xScale, priceScale, volumeScale
-  :: [(Int,Bid,Ask,Volume)] -> LinearScale
-xScale dataSeries =
+  :: Width -> Height -> [(Int,Bid,Ask,Volume)] -> LinearScale
+xScale w _ dataSeries =
   LinearScale (map (\(i,_,_,_) -> fromIntegral i) dataSeries)
               margin
-              (margin + chartWidth)
+              (chartWidth w)
 
-priceScale dataSeries =
+priceScale _ h dataSeries =
   LinearScale (concatMap (\(_,b,a,_) -> [b,a]) dataSeries)
-              (margin + volumeChartHeight)
-              (margin + volumeChartHeight + priceChartHeight)
+              (margin + volumeChartHeight h)
+              (margin + volumeChartHeight h + priceChartHeight h)
 
--- priceScale dataSeries =
---   LinearScale (concatMap (\(_,b,a,_) -> [b,a]) dataSeries)
---               (margin + priceChartHeight)
---               margin
-
--- volumeScale dataSeries =
---   LinearScale (map (\(_,_,_,v) -> v) dataSeries)
---               (margin + priceChartHeight + volumeChartHeight)
---               (margin + priceChartHeight)
-
-volumeScale dataSeries =
+volumeScale _ h dataSeries =
   LinearScale (map (\(_,_,_,v) -> v) dataSeries)
               margin
-              (margin + volumeChartHeight)
+              (margin + volumeChartHeight h)
 
 -- Add a frame for the chart. The frame dimensions are the width and
 --  height provided on the command line.
@@ -51,43 +39,28 @@ frame w h = do
     useColor black
 
     moveTo 0 0
-    lineTo w 0
-    lineTo w h
-    lineTo 0 h
-    closePath
+    rectangle 0 0 w h
     stroke
 
 pChart
-  :: [(Int,Bid,Ask,Volume)] -> Render ()
-pChart dataSeries =
-  priceGraph (xScale dataSeries)
-              (priceScale dataSeries)
+  :: Width -> Height -> [(Int,Bid,Ask,Volume)] -> Render ()
+pChart w h dataSeries =
+  priceGraph (xScale w h dataSeries)
+              (priceScale w h dataSeries)
               (map (\(i,b,_,_) -> (i,b)) dataSeries)
               (map (\(i,_,a,_) -> (i,a)) dataSeries)
 
 vChart
-  :: [(Int,Bid,Ask,Volume)] -> Render ()
-vChart dataSeries =
-  volumeGraph (xScale dataSeries)
-               (volumeScale dataSeries)
+  :: Width -> Height -> [(Int,Bid,Ask,Volume)] -> Render ()
+vChart w h dataSeries =
+  volumeGraph (xScale w h dataSeries)
+               (volumeScale w h dataSeries)
                (map (\(i,_,_,v) -> (i,v)) dataSeries)
 
 chart
   :: Width -> Height -> [(Int,Bid,Ask,Volume)] -> Render ()
-chart w h dataSeries = do
---   frame w h
---   dot (V2 margin margin)
---   dot (V2 (w - margin) (h - margin))
---   x <- getMatrix
---   liftIO ( print x )
--- --   setMatrix (Matrix 1 0 0 (-1) 0 0)
--- --   y <- getMatrix
--- --   liftIO ( print y )
-  transform (Matrix 1 0 0 (-1) 0 0)
-  translate 0 (-h)
---   z <- getMatrix
---   liftIO ( print z )
---   dot (V2 margin margin)
+chart w h dataSeries =
+  frame w h >> pChart w h dataSeries >> vChart w h dataSeries
 --   position [(p2 (frameWidth / 2,frameHeight / 2),frame)
 --            ,(p2 (margin,margin + volumeChartHeight),pChart dataSeries)
 --            ,(p2 (margin,margin),vChart dataSeries)
@@ -105,24 +78,19 @@ chart w h dataSeries = do
 --             ,rightAxis (priceScale dataSeries))
 --            ,(p2 (frameWidth - margin,margin + (volumeChartHeight / 2))
 --             ,rightAxis (volumeScale dataSeries))]
-  frame w h >> pChart dataSeries >> vChart dataSeries
 
 -- The size of the chart, in logical units. All the diagrams use the
 --  logical units. The translation from the actual units to the logical
 --  units is done by the renderer. 100 corresponds to 100%.
-margin, frameWidth, frameHeight :: Double
-frameWidth = 1000 + (2 * margin)
-
-frameHeight = 1000 + (2 * margin)
-
+margin :: Double
 margin = 20
 
 chartWidth, chartHeight, priceChartHeight, volumeChartHeight
-  :: Double
-chartWidth = 1000
+  :: Double -> Double
+chartWidth w = w - (2 * margin)
 
-chartHeight = 1000
+chartHeight h = h - (2 * margin)
 
-priceChartHeight = 800
+priceChartHeight = ( * 0.8) . chartHeight
 
-volumeChartHeight = 200
+volumeChartHeight =  (* 0.2) . chartHeight

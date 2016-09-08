@@ -38,9 +38,12 @@ priceGraph xScale yScale bids asks =
 --  center. Explicitly position all the elements.
 areaBetweenBidAndAsk :: [(V2 Double)] -> Render ()
 areaBetweenBidAndAsk [] = return ()
-areaBetweenBidAndAsk points@(p:_) = do
+areaBetweenBidAndAsk ((V2 ix iy):points) = do
   useColor lightpink
-  (\(V2 x y) -> moveTo x y) p
---   mapM_ (uncurry lineTo) points
+  l <- getLineJoin
+  setLineJoin LineJoinRound
+  moveTo ix iy
   mapM_ (\(V2 x y) -> lineTo x y) points
+  closePath
   fill
+  setLineJoin l

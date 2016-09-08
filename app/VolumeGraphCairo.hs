@@ -21,8 +21,8 @@ volumeGraph
      ,Scale yscale)
   => xscale -> yscale -> [Volume] -> Render ()
 volumeGraph xScale yScale volumes =
+  mapM_ (uncurry (bar xScale yScale (barWidth chartWidth (length volumes)))) volumes >>
   mapM_ dot scaledVolumes
-  >> mapM_ (uncurry (bar xScale yScale (barWidth chartWidth (length volumes)))) volumes
   where scaledVolumes = scaledPoints xScale yScale volumes
         chartWidth = maxRange xScale - minRange xScale
 

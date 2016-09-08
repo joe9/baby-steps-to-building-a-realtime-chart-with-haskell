@@ -5,12 +5,14 @@
 
 module Main where
 
-import Control.Concurrent
-import Control.Concurrent.Async
-import Graphics.Rendering.Cairo        hiding (scale)
-import Graphics.UI.Gtk                 hiding (Scale, rectangle)
-import Data.IORef
-import qualified Data.IntMap.Strict as IntMap
+import           Control.Concurrent
+import           Control.Concurrent.Async
+import qualified Data.IntMap.Strict              as IntMap
+import           Data.IORef
+import           Graphics.Rendering.Cairo        hiding (scale)
+import           Graphics.Rendering.Cairo.Matrix hiding (translate)
+import           Graphics.UI.Gtk                 hiding (Scale,
+                                                  rectangle)
 --
 import ChartCairo
 import Types
@@ -37,18 +39,30 @@ dataSeries =
     ,MyData 10 1.1 1.15 0]
 
 -- http://code.haskell.org/gtk2hs/docs/tutorial/Tutorial_Port/app1.xhtml
-renderDiagram
-  :: Render () -> Graphics.Rendering.Cairo.Render ()
-renderDiagram f =
+renderChart :: (Width -> Height -> [(Int,Bid,Ask,Volume)] -> Render ())
+            -> Width
+            -> Height
+            -> [(Int,Bid,Ask,Volume)]
+            -> Graphics.Rendering.Cairo.Render ()
+renderChart f w h ds = do
+--   m <- getMatrix
+--   liftIO ( print m )
+  -- cairo sets the origin (0,0) in the top left corner
+  -- it is easier when the origin (0,0) is in the bottom left corner
+--   transform (Matrix 1 0 0 (-1) 0 0) >> translate 0 (-h)
+  -- below line is the same as the above
+  setMatrix (Matrix 1 0 0 (-1) 0 h)
+--   n <- getMatrix
+--   liftIO ( print n )
   -- clear the drawing window
-  setSourceRGB 1 1 1 >> paint >>
+  setSourceRGB 1 1 1
+  paint
   -- then draw the diagram
-  f
+  f w h ds
 
 main :: IO ()
 main =
-  do
-     ref <- newIORef dataSeries
+  do ref <- newIORef dataSeries
      _ <- initGUI
      window <- windowNew
      let rows = 30
@@ -80,7 +94,10 @@ main =
                       drawin <- widgetGetDrawWindow canvas
                       series <- readIORef ref
                       (renderWithDrawable drawin .
-                       renderDiagram . chart (fromIntegral w) (fromIntegral h) . dataSeriesList) series
+                       renderChart chart
+                                   (fromIntegral w)
+                                   (fromIntegral h) .
+                       dataSeriesList) series
                       return False)
      _ <- onDestroy window mainQuit
      a <-
@@ -94,28 +111,36 @@ updateLabel label title = labelSetText label title
 
 dataSeriesList
   :: IntMap.IntMap MyData -> [(Int,Bid,Ask,Volume)]
-dataSeriesList = fmap (\(_,d) -> (mdId d,mdBid d,mdAsk d,mdVolume d)) . IntMap.toList
+dataSeriesList =
+  fmap (\(_,d) -> (mdId d,mdBid d,mdAsk d,mdVolume d)) . IntMap.toList
 
 -- http://stackoverflow.com/questions/5293898/how-to-pass-state-between-event-handlers-in-gtk2hs
 -- the below is not a working solution. Use MVar or TVar or IORef as
 -- recommended in the SO answer above
-updatedData
-  :: WidgetClass widget
-  => IORef (IntMap.IntMap MyData) -> widget -> Label -> IntMap.IntMap MyData -> IO b
+updatedData :: WidgetClass widget
+            => IORef (IntMap.IntMap MyData)
+            -> widget
+            -> Label
+            -> IntMap.IntMap MyData
+            -> IO b
 updatedData ref canvas label series =
-  do
-     let newSeries = addAnother series
-     atomicModifyIORef' ref (\_ -> (newSeries,()))
+  do let newSeries = addAnother series
+     atomicModifyIORef' ref
+                        (\_ -> (newSeries,()))
      postGUIAsync
-       ((updateLabel label . show . IntMap.findMax) newSeries >> widgetQueueDraw canvas)
+       ((updateLabel label . show . IntMap.findMax) newSeries >>
+        widgetQueueDraw canvas)
      threadDelay (1 * 1000 * 1000)
-     updatedData ref canvas
-                 label
-                 newSeries
+     updatedData ref canvas label newSeries
 
-addAnother :: IntMap.IntMap MyData -> IntMap.IntMap MyData
+addAnother
+  :: IntMap.IntMap MyData -> IntMap.IntMap MyData
 addAnother ds =
-    IntMap.insert (1 + mdId d)
-           (MyData (1 + mdId d) (1 + mdBid d) (1 + mdAsk d) (1 + mdVolume d))
-           ds
-    where (_,d) = IntMap.findMax ds
+  IntMap.insert
+    (1 + mdId d)
+    (MyData (1 + mdId d)
+            (1 + mdBid d)
+            (1 + mdAsk d)
+            (1 + mdVolume d))
+    ds
+  where (_,d) = IntMap.findMax ds
