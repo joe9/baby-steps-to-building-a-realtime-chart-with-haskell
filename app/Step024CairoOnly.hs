@@ -39,6 +39,7 @@ dataSeries =
     ,MyData 10 1.1 1.15 0]
 
 -- http://code.haskell.org/gtk2hs/docs/tutorial/Tutorial_Port/app1.xhtml
+-- http://stackoverflow.com/questions/26848694/cairo-flips-a-drawing
 renderChart :: (Width -> Height -> [(Int,Bid,Ask,Volume)] -> Render ())
             -> Width
             -> Height
