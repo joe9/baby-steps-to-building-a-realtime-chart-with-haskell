@@ -34,6 +34,8 @@ staticDataSeries =
 
 buildDataSeries :: IO ( IntMap.IntMap MyData)
 buildDataSeries = do
+  -- with 10000 elements, cairo and gloss take 16 seconds to render
+  -- with 1000 elements, cairo and gloss are instantaneous
   let numberOfElements = 10000
   bids <- replicateM numberOfElements (randomRIO (1,2))
   asks <- replicateM numberOfElements (randomRIO (2,3))
