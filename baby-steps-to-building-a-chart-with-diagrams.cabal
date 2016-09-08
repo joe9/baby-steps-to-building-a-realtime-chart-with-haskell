@@ -631,7 +631,7 @@ executable Step023RenderDynamicallyUsingCairoIORefAndIntMap
 executable Step024CairoOnly
   hs-source-dirs:      app
   main-is:             Step024CairoOnly.hs
-  other-modules:       ScaleCairo
+  other-modules:       ScaleV2
                      , PriceGraphCairo
                      , VolumeGraphCairo
                      , AxisCairo

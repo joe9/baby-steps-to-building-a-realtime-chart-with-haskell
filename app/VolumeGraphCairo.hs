@@ -11,7 +11,7 @@ module VolumeGraphCairo
 import Graphics.Rendering.Cairo        hiding (scale, x, y)
 import Data.Colour.Names
 --
-import ScaleCairo
+import ScaleV2
 import Types hiding (Volume)
 
 type Volume = (Int,Double)

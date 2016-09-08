@@ -102,7 +102,7 @@ main =
                       return False)
      _ <- onDestroy window mainQuit
      a <-
-       async (threadDelay (10 * 1000 * 1000) >>
+       async (threadDelay (1 * 1000 * 1000) >>
               updatedData ref canvas label dataSeries)
      mainGUI
      cancel a

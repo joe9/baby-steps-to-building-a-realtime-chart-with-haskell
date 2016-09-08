@@ -12,7 +12,7 @@ import Graphics.Rendering.Cairo        hiding (scale, x, y)
 import Data.Colour.Names
 import Linear.V2
 --
-import ScaleCairo
+import ScaleV2
 import Types hiding (Bid,Ask)
 
 type Bid = (Int,Double)

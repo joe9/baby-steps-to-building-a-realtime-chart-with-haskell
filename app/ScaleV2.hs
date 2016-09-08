@@ -3,7 +3,7 @@
 {-# LANGUAGE NoMonomorphismRestriction #-}
 {-# LANGUAGE TypeFamilies              #-}
 
-module ScaleCairo where
+module ScaleV2 where
 
 import Linear.V2
 

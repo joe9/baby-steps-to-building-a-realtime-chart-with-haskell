@@ -11,7 +11,7 @@ import Data.Colour.Names
 --
 -- import AxisCairo
 import PriceGraphCairo
-import ScaleCairo
+import ScaleV2
 import Types
 import VolumeGraphCairo
 
