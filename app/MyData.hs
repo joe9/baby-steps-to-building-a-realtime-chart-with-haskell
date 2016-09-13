@@ -41,3 +41,10 @@ buildDataSeries = do
   asks <- replicateM numberOfElements (randomRIO (2,3))
   volumes <- replicateM numberOfElements (randomRIO (0,1000000))
   (return . IntMap.fromList . map (\d -> (mdId d,d))) (zipWith4 MyData [1..] bids asks volumes)
+
+-- below functions for building C test data
+showBidAndAskVertices :: IntMap.IntMap MyData -> String
+showBidAndAskVertices mds = concatMap showBidAndAskVertex mds
+
+showBidAndAskVertex :: MyData -> String
+showBidAndAskVertex md = " " ++ show (mdBid md - 2) ++ "f," ++ show (mdAsk md - 2) ++ "f,\n"
