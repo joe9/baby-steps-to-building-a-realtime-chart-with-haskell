@@ -32,6 +32,7 @@ import Graphics.UI.GLFW as GLFW
 import           Data.Bits
 import qualified Data.ByteString      as BS
 import           Data.Monoid
+import           Data.Maybe
 import qualified Data.Vector.Storable as V
 import           "gl" Graphics.GL
 import           Linear.V4
@@ -41,8 +42,8 @@ import           Quine.GL.Error
 import GLException
 
 -- | Geometry data is a list of four 2D vertices.
-vertexBufferData :: [GLfloat]
-vertexBufferData = [-1,-1,1,-1,-1,1,1,1]
+vertexBufferData :: V.Vector GLfloat
+vertexBufferData = V.fromList [-1,-1,1,-1,-1,1,1,1]
 
 vertices :: V.Vector GLfloat
 vertices = V.fromList [-0.6,-0.4,0.6,-0.4,0,0.6]
@@ -115,12 +116,24 @@ drawWindow
   :: Window -> ColorUniformLocation -> IO ()
 -- drawWindow window colorUniformLocation = undefined
 drawWindow window colorUniformLocation =
-  do loadColor colorUniformLocation 1 0 0 1
+  do
+     previousmt <- GLFW.getTime
+     loadColor colorUniformLocation 1 0 0 1
      loadBuffer vertices
+     glClearColor 0.05 0.05 0.05 1
      glClear (GL_COLOR_BUFFER_BIT .|. GL_DEPTH_BUFFER_BIT .|.
               GL_STENCIL_BUFFER_BIT)
-     glClearColor 0.05 0.05 0.05 1
      glDrawArrays GL_TRIANGLES 0 3
+     GLFW.swapBuffers window
+     glFlush  -- not necessary, but someone recommended it
+     mt <- GLFW.getTime
+     putStrLn ("time taken to draw: " ++ show (1000 * (fromMaybe 0 mt - fromMaybe 0 previousmt)) ++ " milliseconds")
+     threadDelay (1 * 1000 * 1000)
+
+     loadColor colorUniformLocation 0 1 0 1
+     loadBuffer vertexBufferData
+     glClearColor 0.05 0.05 0.05 1
+     glDrawArrays GL_LINE_LOOP 0 4
      GLFW.swapBuffers window
      glFlush  -- not necessary, but someone recommended it
      threadDelay (10 * 1000 * 1000)
@@ -345,46 +358,6 @@ getShaderId shaderType shaderSource =
 checkGLErrors :: IO a -> IO a
 checkGLErrors f = f >>= (\v -> throwErrors >> return v)
 
--- | Set drawing parameters that won't change during execution.
--- drawInit   = do clearColor $= Color4 1 1 1 1
---                 clear [ColorBuffer]
--- setupDrawable = do
---                 vao <- makeVAO $ do
---                     -- do this for static objects
---                     GL.vertexAttribArray (GL.AttribLocation 0) $= GL.Enabled
---                     V.unsafeWith vertices $ \ptr -> do
---                         GL.vertexAttribPointer (GL.AttribLocation 0) $=
---                             (GL.ToFloat, GL.VertexArrayDescriptor 3 GL.Float 0 ptr)
---                     GL.vertexAttribArray (GL.AttribLocation 0) $= GL.Disabled
---                 return vao
--- draw vao = withVAO vao $ do
---     sp <- shaderProgram
---     GL.currentProgram $= Just (program sp)
---     setUniform sp "color" (V4 (0 :: GLfloat) 1 0 1)
---     GL.vertexAttribArray (GL.AttribLocation 0) $= GL.Enabled
---     V.unsafeWith vertices $ \ptr -> do
---         GL.vertexAttribPointer (GL.AttribLocation 0) $=
---             (GL.ToFloat, GL.VertexArrayDescriptor 3 GL.Float 0 ptr)
---     GL.drawArrays GL.Triangles 0 3
---     GL.vertexAttribArray (GL.AttribLocation 0) $= GL.Disabled
--- main :: IO ()
--- main = do ok <- init
---           when (not ok) (error "Error initializing GLFW!")
---           windowHint (WindowHint'ContextVersionMajor 3)
---           windowHint (WindowHint'ContextVersionMinor 0)
---           windowHint $ WindowHint'RefreshRate 100
---           m@(~(Just w)) <- createWindow 500 500 "Chapter 2" Nothing Nothing
---           when (isNothing m) (error "Couldn't create window!")
---           makeContextCurrent m
---           setWindowTitle w "Chapter 2"
---           vao <- setupDrawable
---           drawInit
---           let keyIsPressed k = (== KeyState'Pressed) <$> getKey w k
---               go   = do draw vao
---                         swapBuffers w
---                         pollEvents
---                         keyIsPressed Key'Escape >>= flip unless go
---           go
 -- I do not care about the others
 data BufferObjectType
   = ARRAY_BUFFER
