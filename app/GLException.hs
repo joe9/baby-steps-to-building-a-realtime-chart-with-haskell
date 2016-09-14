@@ -10,7 +10,7 @@ import Control.Exception.Safe
 import Quine.GL.Error
 
 data GLException
-  = ShaderProgramCompilationFailed String [Error]
+  = ShaderProgramCompilationFailed String String String [Error]
   | ProgramCompilationFailed String [Error]
   deriving (Eq,Show,Typeable)
 
