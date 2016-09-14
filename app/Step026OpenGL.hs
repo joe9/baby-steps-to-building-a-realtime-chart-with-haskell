@@ -31,14 +31,15 @@ import Graphics.UI.GLFW as GLFW
 --   https://ghc.haskell.org/trac/ghc/wiki/Commentary/Packages/PackageImportsProposal
 import           Data.Bits
 import qualified Data.ByteString      as BS
-import           Data.Monoid
 import           Data.Maybe
+import           Data.Monoid
 import qualified Data.Vector.Storable as V
 import           "gl" Graphics.GL
 import           Linear.V4
 import           Quine.Debug
 import           Quine.GL.Error
 --
+import BulkVerticesData
 import GLException
 
 -- | Geometry data is a list of four 2D vertices.
@@ -116,9 +117,7 @@ drawWindow
   :: Window -> ColorUniformLocation -> IO ()
 -- drawWindow window colorUniformLocation = undefined
 drawWindow window colorUniformLocation =
-  do
-     previousmt <- GLFW.getTime
-     loadColor colorUniformLocation 1 0 0 1
+  do loadColor colorUniformLocation 1 0 0 1
      loadBuffer vertices
      glClearColor 0.05 0.05 0.05 1
      glClear (GL_COLOR_BUFFER_BIT .|. GL_DEPTH_BUFFER_BIT .|.
@@ -126,17 +125,26 @@ drawWindow window colorUniformLocation =
      glDrawArrays GL_TRIANGLES 0 3
      GLFW.swapBuffers window
      glFlush  -- not necessary, but someone recommended it
-     mt <- GLFW.getTime
-     putStrLn ("time taken to draw: " ++ show (1000 * (fromMaybe 0 mt - fromMaybe 0 previousmt)) ++ " milliseconds")
      threadDelay (1 * 1000 * 1000)
-
      loadColor colorUniformLocation 0 1 0 1
      loadBuffer vertexBufferData
      glClearColor 0.05 0.05 0.05 1
      glDrawArrays GL_LINE_LOOP 0 4
      GLFW.swapBuffers window
      glFlush  -- not necessary, but someone recommended it
-     threadDelay (10 * 1000 * 1000)
+     threadDelay (1 * 1000 * 1000)
+     previousmt <- GLFW.getTime
+     loadColor colorUniformLocation 0 1 0 1
+     loadBuffer bulkVertices
+     glClearColor 0.05 0.05 0.05 1
+     glDrawArrays GL_LINE_LOOP 0 (fromIntegral (V.length bulkVertices))
+     GLFW.swapBuffers window
+     glFlush  -- not necessary, but someone recommended it
+     mt <- GLFW.getTime
+     putStrLn ("time taken to draw: " ++
+               show (1000 * (fromMaybe 0 mt - fromMaybe 0 previousmt)) ++
+               " milliseconds")
+     threadDelay (1 * 1000 * 1000)
 
 --   GLFW.pollEvents
 colorUniformLocationInProgram

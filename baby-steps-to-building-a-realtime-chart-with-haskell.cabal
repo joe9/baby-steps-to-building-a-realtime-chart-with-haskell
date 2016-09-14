@@ -713,6 +713,7 @@ executable Step026OpenGL
                      , TypesGloss
                      , MyData
                      , GLException
+                     , BulkVerticesData
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N
   build-depends:       base
                      , baby-steps-to-building-a-realtime-chart-with-haskell
