@@ -13,6 +13,7 @@ module Main where
 import Prelude hiding (init)
 -- import           System.Exit (exitFailure)
 -- import Control.Applicative
+import Control.Concurrent
 import Control.Exception.Safe
 import Control.Monad          (unless, when)
 import Data.Maybe             (isNothing)
@@ -60,7 +61,7 @@ fragmentShaderSource :: BS.ByteString
 fragmentShaderSource =
   BS.intercalate
     "\n"
-    ["#version 550"
+    ["#version 530"
     ,"uniform vec4 color = vec4(1.0f,0.0f,0.0f,1.0f);"
     ,"out vec4 out_Color;"
     ,"void main(void) {out_Color = color;}"]
@@ -87,147 +88,161 @@ main =
                 GLFW.windowHint (GLFW.WindowHint'ContextVersionMinor 3)
                 GLFW.windowHint (GLFW.WindowHint'OpenGLProfile GLFW.OpenGLProfile'Core)
                 GLFW.windowHint (GLFW.WindowHint'OpenGLForwardCompat True)
-                mw <- GLFW.createWindow 640 480 "test GLFW" Nothing Nothing
-                case mw of
-                  Nothing -> GLFW.terminate >> exitFailure
-                  Just window ->
-                    do GLFW.makeContextCurrent mw
-                       GLFW.setKeyCallback window
-                                           (Just keyCallback)
-                       programId <- withProgram
-                       GLFW.destroyWindow window
-                       GLFW.terminate
-                       exitSuccess
+                -- OpenGL stuff
+                withProgram
+                  (\programId -> withVertexArrayObject (drawWindow programId))
 
---               return window
-attachShader :: ProgramId -> ShaderId -> IO ()
-attachShader p = checkGLErrors . glAttachShader p
+drawWindow programId =
+  do mw <- GLFW.createWindow 640 480 "test GLFW" Nothing Nothing
+     case mw of
+       Nothing -> GLFW.terminate >> exitFailure
+       Just window ->
+         do GLFW.makeContextCurrent mw
+            GLFW.setKeyCallback window
+                                (Just keyCallback)
+            threadDelay (10 * 1000 * 1000)
+            GLFW.destroyWindow window
+            GLFW.terminate
+            exitSuccess
+
+loadBuffer :: V.Vector GLfloat -> IO ()
+loadBuffer bufferData =
+  V.unsafeWith
+    bufferData
+    (\ptr ->
+       glBufferData
+         GL_ARRAY_BUFFER
+         (fromIntegral (sizeOf (undefined :: GLfloat) * V.length bufferData))
+         (castPtr ptr)
+         GL_STREAM_DRAW)
+
+withVertexArrayObject :: IO a -> IO a
+withVertexArrayObject f =
+  bracket (alloca (\vertexArrayObjectPtr ->
+                     do checkGLErrors $
+                          glGenVertexArrays 1 vertexArrayObjectPtr
+                        peek vertexArrayObjectPtr))
+          (\vertexArrayObjectId ->
+             alloca (\vertexArrayObjectPtr ->
+                       do poke vertexArrayObjectPtr vertexArrayObjectId
+                          checkGLErrors $
+                            glDeleteVertexArrays 1 vertexArrayObjectPtr))
+          (\vertexArrayObjectId ->
+             do glBindVertexArray vertexArrayObjectId
+                withVertexBufferObject f)
+
+type AttributeIndex = GLuint
+
+withVertexAttribArray
+  :: AttributeIndex -> IO d -> IO d
+withVertexAttribArray attributeIndex f =
+  bracket_ (checkGLErrors $ glEnableVertexAttribArray attributeIndex)
+           (checkGLErrors $ glDisableVertexAttribArray attributeIndex)
+           f
+
+-- following https://www.opengl.org/wiki/Vertex_Specification
+-- separating format specification from buffers ARB_vertex_attrib_binding
+withVertexBufferObject :: IO d -> IO d
+withVertexBufferObject f =
+  withBufferObject $
+  \bufferObjectId ->
+    do
+       -- hardcoding bindingindex to 0
+       -- stride = 2, as all my vertexes have 2 coordinates (x & y)
+       checkGLErrors $
+         glBindVertexBuffer 0
+                            bufferObjectId
+                            0
+                            (fromIntegral (2 * (sizeOf (undefined :: GLfloat))))
+       checkGLErrors $ glVertexAttribFormat 0 2 GL_FLOAT GL_FALSE 0
+       checkGLErrors $ glVertexAttribBinding 0 0
+       withVertexAttribArray 0 f
+
+--   https://www.opengl.org/wiki/Buffer_Object
+-- bufferObjectType : mostly GL_ARRAY_BUFFER
+-- usage : for axis and frame: GL_DYNAMIC_DRAW -- data changes occassionally
+--                   others: GL_STREAM_DRAW -- data changes after every use
+-- GLsizeiptr: It's not a pointer. It's an integral type the same size as a pointer.
+--   http://stackoverflow.com/questions/26758129/glbufferdata-second-arg-is-glsizeiptr-not-glsizei-why
+type BufferObjectId = GLuint
+
+withBufferObject
+  :: (BufferObjectId -> IO c) -> IO c
+withBufferObject f =
+  bracket (alloca (\bufferObjectPtr ->
+                     do checkGLErrors $ glGenBuffers 1 bufferObjectPtr
+                        peek bufferObjectPtr))
+          (\bufferObjectId ->
+             alloca (\bufferObjectPtr ->
+                       do poke bufferObjectPtr bufferObjectId
+                          checkGLErrors $ glDeleteBuffers 1 bufferObjectPtr))
+          (\bufferObjectId ->
+             do glBindBuffer GL_ARRAY_BUFFER bufferObjectId
+                f bufferObjectId)
 
 type ProgramId = GLuint
 
--- withProgram :: (ProgramId -> IO r) -> IO r
-withProgram :: IO ProgramId
-withProgram =
-  bracket (checkGLErrors glCreateProgram)
-          glDeleteProgram $ \programId -> do
-  withShader Vertex vertexShaderSource $ \vertexShaderId -> do
-  withShader Fragment fragmentShaderSource $ \fragmentShaderId -> do
-  bracket_ (attachShader programId vertexShaderId)
-           (glDetachShader programId vertexShaderId) $
-    bracket_ (attachShader programId fragmentShaderId)
-            (glDetachShader programId fragmentShaderId) $ do
-    glLinkProgram programId
-    -- check compile status
-    linkStatus <- alloca (\linkStatusPtr -> do
-                                glGetProgramiv programId GL_LINK_STATUS linkStatusPtr
-                                peek linkStatusPtr)
-    infoLogLength <- alloca (\infoLogLengthPtr -> do
-                                glGetProgramiv programId GL_INFO_LOG_LENGTH infoLogLengthPtr
-                                peek infoLogLengthPtr)
-    putStrLn ("infoLogLength: " ++ show infoLogLength)
-    let getInfoLog = alloca (\infoLogPtr -> do
-                                glGetProgramInfoLog programId infoLogLength nullPtr infoLogPtr
-                                peekCString infoLogPtr)
-    if linkStatus == GL_TRUE
-        then do
-            -- the infoLogLength includes the size of the null termination character
-            -- do not bother printing the infoLog if it just has the null
-            --   termination character
-            when (infoLogLength > 1)
-             (do
-                -- the info log also has warnings, etc. So, it is a good idea to
-                -- check it even if there are no errors
-                infoLog <- getInfoLog
-                putStrLn ("infoLog: " ++ infoLog))
-            checkGLErrors (glUseProgram programId)
-            -- add more functions using the programId here
-            return programId
-        else do if infoLogLength == 0
-                then errors >>= (\es -> throw (ProgramCompilationFailed "No information log" es))
-                else do infoLog <- getInfoLog
-                        putStrLn ("infoLog: " ++ infoLog)
-                        errors >>= (\es -> throw (ProgramCompilationFailed infoLog es))
+attachShader :: ProgramId -> ShaderId -> IO ()
+attachShader p = checkGLErrors . glAttachShader p
 
 -- withProgram :: (ProgramId -> IO r) -> IO r
-withProgram1 :: IO ProgramId
-withProgram1 =
-  do bracket (withShader
-                Vertex
-                vertexShaderSource
-                (\vertexShaderId ->
-                   do withShader
-                        Fragment
-                        fragmentShaderSource
-                        (\fragmentShaderId ->
-                           do bracket (checkGLErrors glCreateProgram)
-                                      glDeleteProgram
-                                      (\programId ->
-                                         do bracket_ (attachShader programId vertexShaderId)
-                                                     (glDetachShader programId vertexShaderId)
-                                                     (bracket_ (attachShader programId
-                                                                             fragmentShaderId)
-                                                               (glDetachShader programId
-                                                                               fragmentShaderId)
-                                                               (do glLinkProgram programId
-                                                                   -- check compile status
-                                                                   linkStatus <-
-                                                                     (alloca (\linkStatusPtr ->
-                                                                                do glGetProgramiv programId
-                                                                                                  GL_LINK_STATUS
-                                                                                                  linkStatusPtr
-                                                                                   peek linkStatusPtr))
-                                                                   infoLogLength <-
-                                                                     alloca (\infoLogLengthPtr ->
-                                                                               do glGetProgramiv programId
-                                                                                                 GL_INFO_LOG_LENGTH
-                                                                                                 infoLogLengthPtr
-                                                                                  peek infoLogLengthPtr)
-                                                                   putStrLn ("infoLogLength: " ++
-                                                                             show infoLogLength)
-                                                                   let getInfoLog =
-                                                                         alloca (\infoLogPtr ->
-                                                                                   do glGetProgramInfoLog programId
-                                                                                                          infoLogLength
-                                                                                                          nullPtr
-                                                                                                          infoLogPtr
-                                                                                      peekCString infoLogPtr)
-                                                                   if linkStatus ==
-                                                                      GL_TRUE
-                                                                      then do
-                                                                              -- the infoLogLength includes the size of the null termination character
-                                                                              -- do not bother printing the infoLog if it just has the null
-                                                                              --   termination character
-                                                                              when
-                                                                                (infoLogLength >
-                                                                                 1)
-                                                                                (do
-                                                                                    -- the info log also has warnings, etc. So, it is a good idea to
-                                                                                    -- check it even if there are no errors
-                                                                                    infoLog <-
-                                                                                      getInfoLog
-                                                                                    putStrLn ("infoLog: " ++
-                                                                                              infoLog))
-                                                                              checkGLErrors (glUseProgram programId)
-                                                                              return programId
-                                                                      else do if infoLogLength ==
-                                                                                 0
-                                                                                 then errors >>=
-                                                                                      (\es ->
-                                                                                         throw (ProgramCompilationFailed "No information log"
-                                                                                                                         es))
-                                                                                 else do infoLog <-
-                                                                                           getInfoLog
-                                                                                         putStrLn ("infoLog: " ++
-                                                                                                   infoLog)
-                                                                                         errors >>=
-                                                                                           (\es ->
-                                                                                              throw (ProgramCompilationFailed infoLog
-                                                                                                                              es))))))))
-             (\programId    --TODO remove the program
-                ->
-                return ())
-             (\programId -> return programId -- TODO change later
-              )
+withProgram :: (ProgramId -> IO a) -> IO a
+withProgram f =
+  bracket (checkGLErrors glCreateProgram) glDeleteProgram $
+  \programId ->
+    do withShader Vertex vertexShaderSource $
+         \vertexShaderId ->
+           do withShader Fragment fragmentShaderSource $
+                \fragmentShaderId ->
+                  do bracket_ (attachShader programId vertexShaderId)
+                              (glDetachShader programId vertexShaderId) $
+                       bracket_ (attachShader programId fragmentShaderId)
+                                (glDetachShader programId fragmentShaderId) $
+                       do glLinkProgram programId
+                          -- check compile status
+                          linkStatus <-
+                            alloca (\linkStatusPtr ->
+                                      do glGetProgramiv programId GL_LINK_STATUS linkStatusPtr
+                                         peek linkStatusPtr)
+                          infoLogLength <-
+                            alloca (\infoLogLengthPtr ->
+                                      do glGetProgramiv programId
+                                                        GL_INFO_LOG_LENGTH
+                                                        infoLogLengthPtr
+                                         peek infoLogLengthPtr)
+                          putStrLn ("infoLogLength: " ++ show infoLogLength)
+                          let getInfoLog =
+                                alloca (\infoLogPtr ->
+                                          do glGetProgramInfoLog programId
+                                                                 infoLogLength
+                                                                 nullPtr
+                                                                 infoLogPtr
+                                             peekCString infoLogPtr)
+                          if linkStatus == GL_TRUE
+                             then do
+                                     -- the infoLogLength includes the size of the null termination character
+                                     -- do not bother printing the infoLog if it just has the null
+                                     --   termination character
+                                     when
+                                       (infoLogLength > 1)
+                                       (do
+                                           -- the info log also has warnings, etc. So, it is a good idea to
+                                           -- check it even if there are no errors
+                                           infoLog <- getInfoLog
+                                           putStrLn ("infoLog: " ++ infoLog))
+                                     checkGLErrors (glUseProgram programId)
+                                     f programId
+                             else do if infoLogLength == 0
+                                        then errors >>=
+                                             (\es ->
+                                                throw (ProgramCompilationFailed "No information log"
+                                                                                es))
+                                        else do infoLog <- getInfoLog
+                                                putStrLn ("infoLog: " ++
+                                                          infoLog)
+                                                errors >>=
+                                                  (\es ->
+                                                     throw (ProgramCompilationFailed infoLog es))
 
 -- sticking to using the raw gl calls as I can be sure where something
 -- got messed up when things go wrong
@@ -245,55 +260,65 @@ withShader
 withShader shaderType shaderSource f =
   let shaderTypeGL Vertex   = GL_VERTEX_SHADER
       shaderTypeGL Fragment = GL_FRAGMENT_SHADER
-  in bracket (checkGLErrors (glCreateShader (shaderTypeGL shaderType)))
-             -- prevent leak
-             glDeleteShader
-             (\shaderId ->
-                do BS.useAsCString
-                     shaderSource
-                     (\c_string ->
-                        let gl_string = castPtr c_string :: Ptr GLchar
-                        in withArray [gl_string]
-                                     (\ptrToArrayOfStrings ->
-                                        glShaderSource shaderId 1 ptrToArrayOfStrings nullPtr))
-                   (glCompileShader shaderId)
-                   -- check compile status
-                   compileStatus <-
-                     (alloca (\compileStatusPtr ->
-                                do glGetShaderiv shaderId GL_COMPILE_STATUS compileStatusPtr
-                                   peek compileStatusPtr))
-                   infoLogLength <-
-                     alloca (\infoLogLengthPtr ->
-                               do glGetShaderiv shaderId GL_INFO_LOG_LENGTH infoLogLengthPtr
-                                  peek infoLogLengthPtr)
-                   putStrLn ("infoLogLength: " ++ show infoLogLength)
-                   let getInfoLog =
-                         alloca (\infoLogPtr ->
-                                   do glGetShaderInfoLog shaderId infoLogLength nullPtr infoLogPtr
-                                      peekCString infoLogPtr)
-                   if compileStatus == GL_TRUE
-                      then do
-                              -- the infoLogLength includes the size of the null termination character
-                              -- do not bother printing the infoLog if it just has the null
-                              --   termination character
-                              when
-                                (infoLogLength > 1)
-                                (do
-                                    -- the info log also has warnings, etc. So, it is a good idea to
-                                    -- check it even if there are no errors
-                                    infoLog <- getInfoLog
-                                    putStrLn ("infoLog: " ++ infoLog))
-                              f shaderId
-                      else do if infoLogLength == 0
-                                 then errors >>=
-                                      (\es ->
-                                         throw (ShaderProgramCompilationFailed "No information log"
-                                                                               es))
-                                 else do infoLog <- getInfoLog
-                                         putStrLn ("infoLog: " ++ infoLog)
-                                         errors >>=
-                                           (\es ->
-                                              throw (ShaderProgramCompilationFailed infoLog es)))
+  in
+     --   in bracket (checkGLErrors (glCreateShader (shaderTypeGL shaderType)))
+     bracket
+       (glCreateShader (shaderTypeGL shaderType))
+       -- prevent leak
+       glDeleteShader
+       (\shaderId ->
+          do BS.useAsCString
+               shaderSource
+               (\c_string ->
+                  let gl_string = castPtr c_string :: Ptr GLchar
+                  in withArray [gl_string]
+                               (\ptrToArrayOfStrings ->
+                                  glShaderSource shaderId 1 ptrToArrayOfStrings nullPtr))
+             glCompileShader shaderId
+             -- check compile status
+             compileStatus <-
+               alloca (\compileStatusPtr ->
+                         do glGetShaderiv shaderId GL_COMPILE_STATUS compileStatusPtr
+                            peek compileStatusPtr)
+             putStrLn ("compileStatus: " ++ show compileStatus)
+             threadDelay (1 * 1000 * 1000)
+             infoLogLength <-
+               alloca (\infoLogLengthPtr ->
+                         do glGetShaderiv shaderId GL_INFO_LOG_LENGTH infoLogLengthPtr
+                            peek infoLogLengthPtr)
+             putStrLn ("infoLogLength: " ++ show infoLogLength)
+             let getInfoLog =
+                   alloca (\infoLogPtr ->
+--                              do glGetShaderInfoLog shaderId infoLogLength nullPtr infoLogPtr
+                             do glGetShaderInfoLog shaderId 256 nullPtr infoLogPtr
+                                peekCString infoLogPtr)
+             if compileStatus == GL_TRUE
+                then do
+                        -- the infoLogLength includes the size of the null termination character
+                        -- do not bother printing the infoLog if it just has the null
+                        --   termination character
+                        when
+                          (infoLogLength > 1)
+                          (do
+                              -- the info log also has warnings, etc. So, it is a good idea to
+                              -- check it even if there are no errors
+                              infoLog <- getInfoLog
+                              putStrLn ("infoLog: " ++ infoLog))
+                        f shaderId
+                else do infoLog <- getInfoLog
+                        putStrLn ("infoLog: " ++ infoLog)
+                        errors >>=
+                            (\es ->
+                            throw (ShaderProgramCompilationFailed infoLog es)))
+--                 else do if infoLogLength == 0
+--                            then errors >>=
+--                                 (\es ->
+--                                    throw (ShaderProgramCompilationFailed "No information log" es))
+--                            else do infoLog <- getInfoLog
+--                                    putStrLn ("infoLog: " ++ infoLog)
+--                                    errors >>=
+--                                      (\es ->
+--                                         throw (ShaderProgramCompilationFailed infoLog es)))
 
 -- according to the docs, this should be a loop checking until there
 -- are no errors
@@ -304,7 +329,6 @@ checkGLErrors f = f >>= (\v -> throwErrors >> return v)
 -- | Set drawing parameters that won't change during execution.
 -- drawInit   = do clearColor $= Color4 1 1 1 1
 --                 clear [ColorBuffer]
-
 -- setupDrawable = do
 --                 vao <- makeVAO $ do
 --                     -- do this for static objects
@@ -314,7 +338,6 @@ checkGLErrors f = f >>= (\v -> throwErrors >> return v)
 --                             (GL.ToFloat, GL.VertexArrayDescriptor 3 GL.Float 0 ptr)
 --                     GL.vertexAttribArray (GL.AttribLocation 0) $= GL.Disabled
 --                 return vao
-
 -- draw vao = withVAO vao $ do
 --     sp <- shaderProgram
 --     GL.currentProgram $= Just (program sp)
@@ -325,7 +348,6 @@ checkGLErrors f = f >>= (\v -> throwErrors >> return v)
 --             (GL.ToFloat, GL.VertexArrayDescriptor 3 GL.Float 0 ptr)
 --     GL.drawArrays GL.Triangles 0 3
 --     GL.vertexAttribArray (GL.AttribLocation 0) $= GL.Disabled
-
 -- main :: IO ()
 -- main = do ok <- init
 --           when (not ok) (error "Error initializing GLFW!")
@@ -344,3 +366,25 @@ checkGLErrors f = f >>= (\v -> throwErrors >> return v)
 --                         pollEvents
 --                         keyIsPressed Key'Escape >>= flip unless go
 --           go
+-- I do not care about the others
+data BufferObjectType
+  = ARRAY_BUFFER
+  | ELEMENT_ARRAY_BUFFER
+
+data BufferUsageType
+  = STATIC_DRAW
+  | DYNAMIC_DRAW
+  | STREAM_DRAW
+
+bufferObjectTypeToEnum :: (Eq a
+                          ,Num a)
+                       => BufferObjectType -> a
+bufferObjectTypeToEnum ARRAY_BUFFER = GL_ARRAY_BUFFER
+bufferObjectTypeToEnum ELEMENT_ARRAY_BUFFER = GL_ELEMENT_ARRAY_BUFFER
+
+bufferUsageTypeToEnum :: (Eq a
+                         ,Num a)
+                      => BufferUsageType -> a
+bufferUsageTypeToEnum STATIC_DRAW  = GL_STATIC_DRAW
+bufferUsageTypeToEnum DYNAMIC_DRAW = GL_DYNAMIC_DRAW
+bufferUsageTypeToEnum STREAM_DRAW  = GL_STREAM_DRAW
