@@ -29,9 +29,9 @@ import System.IO
 -- import qualified Graphics.Rendering.OpenGL as GL
 import Graphics.UI.GLFW as GLFW
 --   https://ghc.haskell.org/trac/ghc/wiki/Commentary/Packages/PackageImportsProposal
+import           Data.Bits
 import qualified Data.ByteString      as BS
 import           Data.Monoid
-import           Data.Bits
 import qualified Data.Vector.Storable as V
 import           "gl" Graphics.GL
 import           Linear.V4
@@ -117,14 +117,15 @@ drawWindow
 drawWindow window colorUniformLocation =
   do loadColor colorUniformLocation 1 0 0 1
      loadBuffer vertices
-     glClear (GL_COLOR_BUFFER_BIT .|. GL_DEPTH_BUFFER_BIT .|. GL_STENCIL_BUFFER_BIT)
+     glClear (GL_COLOR_BUFFER_BIT .|. GL_DEPTH_BUFFER_BIT .|.
+              GL_STENCIL_BUFFER_BIT)
      glClearColor 0.05 0.05 0.05 1
      glDrawArrays GL_TRIANGLES 0 3
      GLFW.swapBuffers window
      glFlush  -- not necessary, but someone recommended it
      threadDelay (10 * 1000 * 1000)
---   GLFW.pollEvents
 
+--   GLFW.pollEvents
 colorUniformLocationInProgram
   :: ProgramId -> IO ColorUniformLocation
 colorUniformLocationInProgram programId =
