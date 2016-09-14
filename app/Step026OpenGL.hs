@@ -31,6 +31,7 @@ import Graphics.UI.GLFW as GLFW
 --   https://ghc.haskell.org/trac/ghc/wiki/Commentary/Packages/PackageImportsProposal
 import qualified Data.ByteString      as BS
 import           Data.Monoid
+import           Data.Bits
 import qualified Data.Vector.Storable as V
 import           "gl" Graphics.GL
 import           Linear.V4
@@ -43,8 +44,8 @@ import GLException
 vertexBufferData :: [GLfloat]
 vertexBufferData = [-1,-1,1,-1,-1,1,1,1]
 
-vertices :: V.Vector Float
-vertices = V.fromList [-0.6,-0.4,0,0.6,-0.4,0,0,0.6,0]
+vertices :: V.Vector GLfloat
+vertices = V.fromList [-0.6,-0.4,0.6,-0.4,0,0.6]
 
 --            , "attribute vec2 inPosition;"
 --   http://stackoverflow.com/questions/27407774/get-supported-glsl-versions
@@ -62,7 +63,7 @@ fragmentShaderSource :: BS.ByteString
 fragmentShaderSource =
   BS.intercalate
     "\n"
-    ["#version 530"
+    ["#version 330"
     ,"uniform vec4 color = vec4(1.0f,0.0f,0.0f,1.0f);"
     ,"out vec4 out_Color;"
     ,"void main(void) {out_Color = color;}"]
@@ -83,35 +84,46 @@ main =
           (\_ -> GLFW.terminate >> GLFW.setErrorCallback (Just errorCallback))
           (\successfulInit ->
              if successfulInit
-                then startWindowOperations
+                then do GLFW.windowHint (GLFW.WindowHint'OpenGLDebugContext True)
+                        --       GLFW.windowHint $ GLFW.WindowHint'DepthBits 16
+                        GLFW.windowHint (GLFW.WindowHint'ContextVersionMajor 3)
+                        GLFW.windowHint (GLFW.WindowHint'ContextVersionMinor 3)
+                        GLFW.windowHint (GLFW.WindowHint'OpenGLProfile GLFW.OpenGLProfile'Core)
+                        GLFW.windowHint (GLFW.WindowHint'OpenGLForwardCompat True)
+                        startWindowOperations
                 else throw GLFWInitFailed)
 
 startWindowOperations :: IO ()
 startWindowOperations =
-  do GLFW.windowHint (GLFW.WindowHint'OpenGLDebugContext True)
-     --       GLFW.windowHint $ GLFW.WindowHint'DepthBits 16
-     GLFW.windowHint (GLFW.WindowHint'ContextVersionMajor 3)
-     GLFW.windowHint (GLFW.WindowHint'ContextVersionMinor 3)
-     GLFW.windowHint (GLFW.WindowHint'OpenGLProfile GLFW.OpenGLProfile'Core)
-     GLFW.windowHint (GLFW.WindowHint'OpenGLForwardCompat True)
-     bracket (GLFW.createWindow 640 480 "test GLFW" Nothing Nothing)
-             (maybe (return ()) GLFW.destroyWindow)
-             (maybe (return ())
-                    (\window ->
-                       do GLFW.makeContextCurrent (Just window)
-                          GLFW.setKeyCallback window
-                                              (Just keyCallback)
-                          -- OpenGL stuff
-                          withProgram
-                            (\programId ->
-                               withVertexArrayObject
-                                 (colorUniformLocationInProgram programId >>=
-                                  drawWindow))))
+  bracket (GLFW.createWindow 640 480 "test GLFW" Nothing Nothing)
+          (maybe (return ()) GLFW.destroyWindow)
+          (maybe (return ())
+                 (\window ->
+                    do GLFW.makeContextCurrent (Just window)
+                       GLFW.setKeyCallback window
+                                           (Just keyCallback)
+                       -- OpenGL stuff
+                       withProgram
+                         (\programId ->
+                            withVertexArrayObject
+                              (colorUniformLocationInProgram programId >>=
+                               drawWindow window))))
 
 type ColorUniformLocation = GLint
 
-drawWindow :: ColorUniformLocation -> IO ()
-drawWindow colorUniformLocation = undefined
+drawWindow
+  :: Window -> ColorUniformLocation -> IO ()
+-- drawWindow window colorUniformLocation = undefined
+drawWindow window colorUniformLocation =
+  do loadColor colorUniformLocation 1 0 0 1
+     loadBuffer vertices
+     glClear (GL_COLOR_BUFFER_BIT .|. GL_DEPTH_BUFFER_BIT .|. GL_STENCIL_BUFFER_BIT)
+     glClearColor 0.05 0.05 0.05 1
+     glDrawArrays GL_TRIANGLES 0 3
+     GLFW.swapBuffers window
+     glFlush  -- not necessary, but someone recommended it
+     threadDelay (10 * 1000 * 1000)
+--   GLFW.pollEvents
 
 colorUniformLocationInProgram
   :: ProgramId -> IO ColorUniformLocation
