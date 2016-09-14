@@ -14,6 +14,7 @@ import Prelude hiding (init)
 -- import           System.Exit (exitFailure)
 -- import Control.Applicative
 import Control.Concurrent
+import Control.Concurrent.Async
 import Control.Exception.Safe
 import Control.Monad          (unless, when)
 import Data.Maybe             (isNothing)
@@ -80,7 +81,17 @@ keyCallback window key _ action _ =
   GLFW.setWindowShouldClose window True
 
 -- https://www.opengl.org/wiki/Shader_Compile_Error
-main =
+main = withGLFW $ do
+        a <- async startWindowOperations
+        b <- async startWindowOperations
+        wait a
+        putStrLn "first window closed"
+        wait b
+        putStrLn "second window closed"
+        threadDelay (1 * 1000 * 1000)
+
+withGLFW :: IO b -> IO b
+withGLFW f =
   GLFW.setErrorCallback (Just errorCallback) >>
   bracket GLFW.init
           (\_ -> GLFW.terminate >> GLFW.setErrorCallback (Just errorCallback))
@@ -92,11 +103,11 @@ main =
                         GLFW.windowHint (GLFW.WindowHint'ContextVersionMinor 3)
                         GLFW.windowHint (GLFW.WindowHint'OpenGLProfile GLFW.OpenGLProfile'Core)
                         GLFW.windowHint (GLFW.WindowHint'OpenGLForwardCompat True)
-                        startWindowOperations
+                        f
                 else throw GLFWInitFailed)
 
-startWindowOperations :: IO ()
-startWindowOperations =
+withWindow :: (Window -> ColorUniformLocation -> IO ()) -> IO ()
+withWindow f =
   bracket (GLFW.createWindow 640 480 "test GLFW" Nothing Nothing)
           (maybe (return ()) GLFW.destroyWindow)
           (maybe (return ())
@@ -109,7 +120,10 @@ startWindowOperations =
                          (\programId ->
                             withVertexArrayObject
                               (colorUniformLocationInProgram programId >>=
-                               drawWindow window))))
+                               f window))))
+
+startWindowOperations :: IO ()
+startWindowOperations = withWindow drawWindow
 
 type ColorUniformLocation = GLint
 
@@ -144,7 +158,7 @@ drawWindow window colorUniformLocation =
      putStrLn ("time taken to draw: " ++
                show (1000 * (fromMaybe 0 mt - fromMaybe 0 previousmt)) ++
                " milliseconds")
-     threadDelay (1 * 1000 * 1000)
+     threadDelay (10 * 1000 * 1000)
 
 --   GLFW.pollEvents
 colorUniformLocationInProgram
