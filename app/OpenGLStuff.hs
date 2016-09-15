@@ -59,49 +59,6 @@ fragmentShaderSource =
     ,"out vec4 out_Color;"
     ,"void main(void) {out_Color = color;}"]
 
--- type ErrorCallback = Error -> String -> IO ()
-errorCallback :: GLFW.ErrorCallback
-errorCallback _ = hPutStrLn stderr
-
-keyCallback :: GLFW.KeyCallback
-keyCallback window key _ action _ =
-  when (key == GLFW.Key'Escape && action == GLFW.KeyState'Pressed) $
-  GLFW.setWindowShouldClose window True
-
--- https://www.opengl.org/wiki/Shader_Compile_Error
-withGLFW :: IO b -> IO b
-withGLFW f =
-  GLFW.setErrorCallback (Just errorCallback) >>
-  bracket GLFW.init
-          (\_ -> GLFW.terminate >> GLFW.setErrorCallback (Just errorCallback))
-          (\successfulInit ->
-             if successfulInit
-                then do GLFW.windowHint (GLFW.WindowHint'OpenGLDebugContext True)
-                        --       GLFW.windowHint $ GLFW.WindowHint'DepthBits 16
-                        GLFW.windowHint (GLFW.WindowHint'ContextVersionMajor 3)
-                        GLFW.windowHint (GLFW.WindowHint'ContextVersionMinor 3)
-                        GLFW.windowHint (GLFW.WindowHint'OpenGLProfile GLFW.OpenGLProfile'Core)
-                        GLFW.windowHint (GLFW.WindowHint'OpenGLForwardCompat True)
-                        f
-                else throw GLFWInitFailed)
-
-withWindow
-  :: (Window -> ColorUniformLocation -> IO ()) -> IO ()
-withWindow f =
-  bracket (GLFW.createWindow 640 480 "test GLFW" Nothing Nothing)
-          (maybe (return ()) GLFW.destroyWindow)
-          (maybe (return ())
-                 (\window ->
-                    do GLFW.makeContextCurrent (Just window)
-                       GLFW.setKeyCallback window
-                                           (Just keyCallback)
-                       -- OpenGL stuff
-                       withProgram
-                         (\programId ->
-                            withVertexArrayObject
-                              (colorUniformLocationInProgram programId >>=
-                               f window))))
-
 type ColorUniformLocation = GLint
 
 data Picture =
@@ -305,6 +262,7 @@ data ShaderType
 
 type ShaderId = GLuint
 
+-- https://www.opengl.org/wiki/Shader_Compile_Error
 getShaderId
   :: ShaderType -> BS.ByteString -> IO ShaderId
 getShaderId shaderType shaderSource =

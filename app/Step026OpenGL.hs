@@ -22,8 +22,8 @@ import qualified Data.Vector.Storable     as V
 import           "gl" Graphics.GL
 import           Graphics.UI.GLFW         as GLFW
 --
-import BulkVerticesData
 import OpenGLStuff
+import GLFWStuff
 
 -- | Geometry data is a list of four 2D vertices.
 vertexBufferData :: V.Vector GLfloat
@@ -36,8 +36,9 @@ vertices = V.fromList [-0.6,-0.4,0.6,-0.4,0,0.6]
 main :: IO ()
 main =
   withGLFW $
-  do a <- asyncBound startWindowOperations
-     b <- asyncBound startWindowOperations
+  do
+     a <- asyncBound window
+     b <- asyncBound window
      wait a
      putStrLn "first window closed"
      wait b
