@@ -22,8 +22,8 @@ import qualified Data.Vector.Storable     as V
 import           "gl" Graphics.GL
 import           Graphics.UI.GLFW         as GLFW
 --
-import OpenGLStuff
 import GLFWStuff
+import OpenGLStuff
 
 -- | Geometry data is a list of four 2D vertices.
 vertexBufferData :: V.Vector GLfloat
@@ -34,19 +34,18 @@ vertices = V.fromList [-0.6,-0.4,0.6,-0.4,0,0.6]
 
 -- https://www.opengl.org/wiki/Shader_Compile_Error
 main :: IO ()
-main =
-  withGLFW $
-  do
-     a <- asyncBound window
-     b <- asyncBound window
-     wait a
-     putStrLn "first window closed"
-     wait b
-     putStrLn "second window closed"
-     threadDelay (1 * 1000 * 1000)
+main = withGLFW $ window drawWindow
+--   withGLFW $
+--   do a <- asyncBound window
+--      b <- asyncBound window
+--      wait a
+--      putStrLn "first window closed"
+--      wait b
+--      putStrLn "second window closed"
+--      threadDelay (1 * 1000 * 1000)
 
 startWindowOperations :: IO ()
-startWindowOperations = withWindow drawWindow
+startWindowOperations = withWindow 640 480 "sample drawWindow" drawWindow
 
 drawWindow
   :: Window -> ColorUniformLocation -> IO ()
@@ -54,4 +53,3 @@ drawWindow window colorUniformLocation =
   do drawPictures window
                   colorUniformLocation
                   [Picture vertices GL_TRIANGLES (RGB 1 0 0,1)]
-     threadDelay (10 * 1000 * 1000)

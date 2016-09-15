@@ -19,7 +19,6 @@ import Text.PrettyPrint
 import Control.Concurrent
 import System.IO
 
-import qualified Graphics.Rendering.OpenGL as GL
 import qualified Graphics.UI.GLFW          as GLFW
 
 import OpenGLStuff
@@ -75,7 +74,7 @@ withGLFW f =
   -- function to set the error callback is one of the few GLFW
   -- functions that may be called before initialization, which lets
   -- you be notified of errors both during and after initialization.
-  GLFW.setErrorCallback $ Just simpleErrorCallback >>
+  GLFW.setErrorCallback (Just simpleErrorCallback) >>
   bracket GLFW.init
           (\_ -> GLFW.terminate >> GLFW.setErrorCallback (Just simpleErrorCallback))
           (\successfulInit ->
@@ -89,8 +88,8 @@ withGLFW f =
                         f
                 else throw GLFWInitFailed)
 
-window :: IO ()
-window = do
+window :: (GLFW.Window -> ColorUniformLocation -> IO ()) -> IO ()
+window f = do
     let width  = 640
         height = 480
 
@@ -114,13 +113,13 @@ window = do
 
         GLFW.swapInterval 1
 
-        GL.position (GL.Light 0) GL.$= GL.Vertex4 5 5 10 0
-        GL.light    (GL.Light 0) GL.$= GL.Enabled
-        GL.lighting   GL.$= GL.Enabled
-        GL.cullFace   GL.$= Just GL.Back
-        GL.depthFunc  GL.$= Just GL.Less
-        GL.clearColor GL.$= GL.Color4 0.05 0.05 0.05 1
-        GL.normalize  GL.$= GL.Enabled
+--         GL.position (GL.Light 0) GL.$= GL.Vertex4 5 5 10 0
+--         GL.light    (GL.Light 0) GL.$= GL.Enabled
+--         GL.lighting   GL.$= GL.Enabled
+--         GL.cullFace   GL.$= Just GL.Back
+--         GL.depthFunc  GL.$= Just GL.Less
+--         GL.clearColor GL.$= GL.Color4 0.05 0.05 0.05 1
+--         GL.normalize  GL.$= GL.Enabled
 
         (fbWidth, fbHeight) <- GLFW.getFramebufferSize win
         major <- GLFW.getWindowContextVersionMajor win
@@ -146,7 +145,7 @@ window = do
               , stateDragStartX      = 0
               , stateDragStartY      = 0
               }
-        runDemo env state
+        runDemo f env state
 
     putStrLn "ended!"
 
@@ -155,10 +154,9 @@ window = do
 -- GLFW-b is made to be very close to the C API, so creating a window is pretty
 -- clunky by Haskell standards. A higher-level API would have some function
 -- like withWindow.
-withWindow
-  :: (GLFW.Window -> ColorUniformLocation -> IO ()) -> IO ()
-withWindow f =
-  bracket (GLFW.createWindow 640 480 "test GLFW" Nothing Nothing)
+withWindow :: Int -> Int -> String -> (GLFW.Window -> ColorUniformLocation -> IO ()) -> IO ()
+withWindow width height title f = do
+  bracket (GLFW.createWindow width height title Nothing Nothing)
           (\maybeWindow -> GLFW.setErrorCallback (Just simpleErrorCallback) >> maybe (return ()) GLFW.destroyWindow maybeWindow)
           (maybe (return ())
                  (\window ->
@@ -215,21 +213,21 @@ charCallback            tc win c          = atomically $ writeTQueue tc $ EventC
 
 --------------------------------------------------------------------------------
 
-runDemo :: Env -> State -> IO ()
-runDemo env state = do
+runDemo :: (GLFW.Window -> ColorUniformLocation -> IO ()) -> Env -> State ->  IO ()
+runDemo f env state = do
     printInstructions
-    void $ evalRWST (adjustWindow >> run) env state
+    void $ evalRWST (adjustWindow >> run f) env state
 
-run :: Demo ()
-run = do
+run :: (GLFW.Window -> ColorUniformLocation -> IO ()) -> Demo ()
+run f = do
     -- number of seconds since GLFW started
     previousmt <- liftIO GLFW.getTime
     win <- asks envWindow
 
-    draw
+    draw f
     liftIO $ do
         GLFW.swapBuffers win
-        GL.flush  -- not necessary, but someone recommended it
+        glFlush  -- not necessary, but someone recommended it
         GLFW.pollEvents
     processEvents
 
@@ -259,7 +257,7 @@ run = do
 
     q <- liftIO $ GLFW.windowShouldClose win
     liftIO (putStrLn ("time taken to draw: " ++ show (1000 * (fromMaybe 0 mt - fromMaybe 0 previousmt)) ++ " milliseconds"))
-    unless q run
+    unless q ( run f)
 
 processEvents :: Demo ()
 processEvents = do
@@ -358,30 +356,24 @@ processEvent ev =
           printEvent "char" [show c]
 
 adjustWindow :: Demo ()
-adjustWindow = do
-    state <- get
-    let width  = stateWindowWidth  state
-        height = stateWindowHeight state
+adjustWindow = return () -- do
+--     state <- get
+--     let width  = stateWindowWidth  state
+--         height = stateWindowHeight state
 
-    let pos   = GL.Position 0 0
-        size  = GL.Size (fromIntegral width) (fromIntegral height)
-        h     = fromIntegral height / fromIntegral width :: Double
-        znear = 1           :: Double
-        zfar  = 40          :: Double
-        xmax  = znear * 0.5 :: Double
-    liftIO $ do
-        GL.viewport   GL.$= (pos, size)
+--     let pos   = GL.Position 0 0
+--         size  = GL.Size (fromIntegral width) (fromIntegral height)
+--         h     = fromIntegral height / fromIntegral width :: Double
+--     liftIO $ do
+--         GL.viewport   GL.$= (pos, size)
 
-draw :: Demo ()
-draw = do
+draw :: (GLFW.Window -> ColorUniformLocation -> IO ()) -> Demo ()
+draw f = do
     env   <- ask
     state <- get
-    liftIO $ do
-        GL.clear [GL.ColorBuffer, GL.DepthBuffer]
-        drawPictures (envWindow env)
+    liftIO $
+        f (envWindow env)
                      (envColorUniformLocation env)
-                     [Picture bulkVertices GL_TRIANGLES (RGB 1 0 0,1)]
-        -- more draw instructions go here
 
 getCursorKeyDirections :: GLFW.Window -> IO (Double, Double)
 getCursorKeyDirections win = do
