@@ -24,6 +24,7 @@ import           Graphics.UI.GLFW         as GLFW
 --
 import GLFWStuff
 import OpenGLStuff
+import BulkVerticesData
 
 -- | Geometry data is a list of four 2D vertices.
 vertexBufferData :: V.Vector GLfloat

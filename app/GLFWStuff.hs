@@ -6,9 +6,7 @@ module GLFWStuff where
 --------------------------------------------------------------------------------
 
 import Control.Concurrent.STM    (TQueue, atomically, newTQueueIO, tryReadTQueue, writeTQueue)
-import Control.Concurrent.Async
 import           Control.Exception.Safe
-import           Data.Colour.SRGB
 import           "gl" Graphics.GL
 import Control.Monad             (unless, when, void)
 import Control.Monad.RWS.Strict  (RWST, ask, asks, evalRWST, get, liftIO, modify, put)
@@ -16,14 +14,12 @@ import Control.Monad.Trans.Maybe (MaybeT(..), runMaybeT)
 import Data.List                 (intercalate)
 import Data.Maybe
 import Text.PrettyPrint
-import Control.Concurrent
 import System.IO
 
 import qualified Graphics.UI.GLFW          as GLFW
 
 import OpenGLStuff
 import GLException
-import BulkVerticesData
 
 --------------------------------------------------------------------------------
 
@@ -159,14 +155,14 @@ withWindow width height title f = do
   bracket (GLFW.createWindow width height title Nothing Nothing)
           (\maybeWindow -> GLFW.setErrorCallback (Just simpleErrorCallback) >> maybe (return ()) GLFW.destroyWindow maybeWindow)
           (maybe (return ())
-                 (\window ->
-                    do GLFW.makeContextCurrent (Just window)
+                 (\win ->
+                    do GLFW.makeContextCurrent (Just win)
                        -- OpenGL stuff
                        withProgram
                          (\programId ->
                             withVertexArrayObject
                               (colorUniformLocationInProgram programId >>=
-                               f window))))
+                               f win))))
 
 -- Callback functions must be set, so GLFW knows to call them. The
 -- function to set the error callback is one of the few GLFW functions
@@ -231,7 +227,7 @@ run f = do
         GLFW.pollEvents
     processEvents
 
-    state <- get
+--     state <- get
 --     if stateDragging state
 --       then do
 --           let sodx  = stateDragStartX      state
@@ -256,8 +252,8 @@ run f = do
     mt <- liftIO GLFW.getTime
 
     q <- liftIO $ GLFW.windowShouldClose win
-    liftIO (putStrLn ("time taken to draw: " ++ show (1000 * (fromMaybe 0 mt - fromMaybe 0 previousmt)) ++ " milliseconds"))
-    unless q ( run f)
+--     liftIO (putStrLn ("time taken to draw: " ++ show (1000 * (fromMaybe 0 mt - fromMaybe 0 previousmt)) ++ " milliseconds"))
+    unless q (run f)
 
 processEvents :: Demo ()
 processEvents = do
@@ -370,10 +366,9 @@ adjustWindow = return () -- do
 draw :: (GLFW.Window -> ColorUniformLocation -> IO ()) -> Demo ()
 draw f = do
     env   <- ask
-    state <- get
+--     state <- get
     liftIO $
-        f (envWindow env)
-                     (envColorUniformLocation env)
+        f (envWindow env) (envColorUniformLocation env)
 
 getCursorKeyDirections :: GLFW.Window -> IO (Double, Double)
 getCursorKeyDirections win = do

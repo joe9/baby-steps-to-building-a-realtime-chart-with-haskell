@@ -69,17 +69,17 @@ data Picture =
 drawPictures
   :: Window -> ColorUniformLocation -> [Picture] -> IO ()
 drawPictures window colorUniformLocation ps =
-  do previousmt <- GLFW.getTime
+  do -- previousmt <- GLFW.getTime
      glClearColor 0.05 0.05 0.05 1
      glClear (GL_COLOR_BUFFER_BIT .|. GL_DEPTH_BUFFER_BIT .|.
               GL_STENCIL_BUFFER_BIT)
      mapM_ (drawPicture window colorUniformLocation) ps
      GLFW.swapBuffers window
      glFlush  -- not necessary, but someone recommended it
-     mt <- GLFW.getTime
-     putStrLn ("time taken to draw: " ++
-               show (1000 * (fromMaybe 0 mt - fromMaybe 0 previousmt)) ++
-               " milliseconds")
+     -- mt <- GLFW.getTime
+--      putStrLn ("time taken to draw: " ++
+--                show (1000 * (fromMaybe 0 mt - fromMaybe 0 previousmt)) ++
+--                " milliseconds")
 
 drawPicture
   :: Window -> ColorUniformLocation -> Picture -> IO ()
