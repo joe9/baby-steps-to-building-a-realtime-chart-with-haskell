@@ -83,7 +83,8 @@ drawPictures window colorUniformLocation ps =
   do
      previousmt <- GLFW.getTime
      glClearColor 0.05 0.05 0.05 1
-     glClear (GL_COLOR_BUFFER_BIT .|. GL_DEPTH_BUFFER_BIT)
+--      glClear (GL_COLOR_BUFFER_BIT .|. GL_DEPTH_BUFFER_BIT)
+     glClear (GL_COLOR_BUFFER_BIT)
      mapM_ (drawPicture window colorUniformLocation) ps
      GLFW.swapBuffers window
      glFlush  -- not necessary, but someone recommended it
