@@ -84,7 +84,7 @@ withGLFW f =
                         f
                 else throw GLFWInitFailed)
 
-window :: (GLFW.Window -> ColorUniformLocation -> IO ()) -> IO ()
+window :: (GLFW.Window -> ColorUniformLocation -> State -> IO ()) -> IO ()
 window f = do
     let width  = 640
         height = 480
@@ -209,12 +209,12 @@ charCallback            tc win c          = atomically $ writeTQueue tc $ EventC
 
 --------------------------------------------------------------------------------
 
-runDemo :: (GLFW.Window -> ColorUniformLocation -> IO ()) -> Env -> State ->  IO ()
+runDemo :: (GLFW.Window -> ColorUniformLocation -> State -> IO ()) -> Env -> State ->  IO ()
 runDemo f env state = do
     printInstructions
     void $ evalRWST (adjustWindow >> run f) env state
 
-run :: (GLFW.Window -> ColorUniformLocation -> IO ()) -> Demo ()
+run :: (GLFW.Window -> ColorUniformLocation -> State -> IO ()) -> Demo ()
 run f = do
     -- number of seconds since GLFW started
     previousmt <- liftIO GLFW.getTime
@@ -352,23 +352,20 @@ processEvent ev =
           printEvent "char" [show c]
 
 adjustWindow :: Demo ()
-adjustWindow = return () -- do
---     state <- get
---     let width  = stateWindowWidth  state
---         height = stateWindowHeight state
+adjustWindow = do
+    state <- get
+    let width  = stateWindowWidth  state
+        height = stateWindowHeight state
 
---     let pos   = GL.Position 0 0
---         size  = GL.Size (fromIntegral width) (fromIntegral height)
---         h     = fromIntegral height / fromIntegral width :: Double
---     liftIO $ do
---         GL.viewport   GL.$= (pos, size)
+    liftIO $ do
+        glViewport 0 0 (fromIntegral width) (fromIntegral height)
 
-draw :: (GLFW.Window -> ColorUniformLocation -> IO ()) -> Demo ()
+draw :: (GLFW.Window -> ColorUniformLocation -> State -> IO ()) -> Demo ()
 draw f = do
     env   <- ask
---     state <- get
+    state <- get
     liftIO $
-        f (envWindow env) (envColorUniformLocation env)
+        f (envWindow env) (envColorUniformLocation env) state
 
 getCursorKeyDirections :: GLFW.Window -> IO (Double, Double)
 getCursorKeyDirections win = do

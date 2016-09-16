@@ -15,13 +15,12 @@ import Prelude hiding (init)
 -- import Control.Applicative
 import Control.Concurrent
 import Control.Exception.Safe
-import Control.Monad          (when)
 import Foreign.C.String
 import Foreign.Marshal.Alloc
 import Foreign.Marshal.Array
 import Foreign.Ptr
+import Linear.V2
 import Foreign.Storable
-import System.IO
 -- import Graphics.GLUtil
 -- import Graphics.Rendering.OpenGL
 -- import qualified Graphics.Rendering.OpenGL as GL
@@ -61,34 +60,68 @@ fragmentShaderSource =
 
 type ColorUniformLocation = GLint
 
+--   Picture (V.Vector GLfloat)
 data Picture =
-  Picture (V.Vector GLfloat)
-          GLenum
-          (RGB GLfloat,GLfloat)
+  Picture ![V2 Double] -- x and y vertices
+          !GLenum -- drawing primitive
+          !(Colour Double) -- colour
+          !(Maybe Double) -- Transparency
+
+v2sToVector :: [V2 Double] -> V.Vector GLfloat
+v2sToVector = V.fromList . concatMap (\(V2 x y) -> [fi x,fi y])
+  where fi = doubleToGLfloat
+
+doubleToGLfloat :: Double -> GLfloat
+doubleToGLfloat = realToFrac :: Double -> GLfloat
+
+colours :: Colour Double -> (GLfloat, GLfloat, GLfloat)
+colours = (\(RGB r g b) -> (doubleToGLfloat r, doubleToGLfloat g,doubleToGLfloat b)) . toSRGB
 
 drawPictures
   :: Window -> ColorUniformLocation -> [Picture] -> IO ()
 drawPictures window colorUniformLocation ps =
-  do -- previousmt <- GLFW.getTime
+  do
+     previousmt <- GLFW.getTime
      glClearColor 0.05 0.05 0.05 1
-     glClear (GL_COLOR_BUFFER_BIT .|. GL_DEPTH_BUFFER_BIT .|.
-              GL_STENCIL_BUFFER_BIT)
+     glClear (GL_COLOR_BUFFER_BIT .|. GL_DEPTH_BUFFER_BIT)
      mapM_ (drawPicture window colorUniformLocation) ps
      GLFW.swapBuffers window
      glFlush  -- not necessary, but someone recommended it
-     -- mt <- GLFW.getTime
---      putStrLn ("time taken to draw: " ++
---                show (1000 * (fromMaybe 0 mt - fromMaybe 0 previousmt)) ++
---                " milliseconds")
+     mt <- GLFW.getTime
+     putStrLn ("time taken to draw: " ++
+                        show (1000 * (fromMaybe 0 mt - fromMaybe 0 previousmt)) ++
+                        " milliseconds")
 
 drawPicture
   :: Window -> ColorUniformLocation -> Picture -> IO ()
-drawPicture _ colorUniformLocation (Picture vertices drawType (RGB r g b,t)) =
-  do loadColor colorUniformLocation r g b t
+drawPicture _ colorUniformLocation (Picture v2s drawType color maybet) =
+  do let (r,g,b) = colours color
+     let vertices = v2sToVector v2s
+     loadColor colorUniformLocation r g b (doubleToGLfloat (fromMaybe 1 maybet))
      loadBuffer vertices
      glDrawArrays drawType
                   0
-                  (fromIntegral (V.length vertices))
+                  (div (fromIntegral (V.length vertices)) 2)
+
+
+-- basic draw function without using the picture
+justDraw
+  :: Window -> ColorUniformLocation -> V.Vector GLfloat -> GLenum -> GLfloat -> GLfloat -> GLfloat -> GLfloat -> IO ()
+justDraw window colorUniformLocation vertices drawType r g b t =
+  do
+     glClearColor 0.05 0.05 0.05 1
+     glClear (GL_COLOR_BUFFER_BIT .|. GL_DEPTH_BUFFER_BIT)
+     loadColor colorUniformLocation r g b t
+     loadBuffer vertices
+     putStrLn ("justDraw: size of float is: " ++ show ((sizeOf (undefined :: GLfloat))))
+     putStrLn ("justDraw: loading number of elements: " ++ show ((sizeOf (undefined :: GLfloat) * V.length vertices)))
+     putStrLn ("justDraw: length of vertices: " ++ show (V.length vertices))
+     putStrLn ("justDraw: loading elements: " ++ show vertices)
+     glDrawArrays drawType
+                  0
+                  (div (fromIntegral (V.length vertices)) 2)
+     GLFW.swapBuffers window
+     glFlush  -- not necessary, but someone recommended it
 
 --   GLFW.pollEvents
 colorUniformLocationInProgram
@@ -108,7 +141,10 @@ loadColor colorUniformLocation r g b t =
   glUniform4f colorUniformLocation r g b t
 
 loadBuffer :: V.Vector GLfloat -> IO ()
-loadBuffer bufferData =
+loadBuffer bufferData = do
+--   putStrLn ("size of float is: " ++ show ((sizeOf (undefined :: GLfloat))))
+--   putStrLn ("loading number of elements: " ++ show ((sizeOf (undefined :: GLfloat) * V.length bufferData)))
+--   putStrLn ("loading elements: " ++ show bufferData)
   V.unsafeWith
     bufferData
     (\ptr ->
@@ -150,14 +186,15 @@ withVertexBufferObject f =
   \bufferObjectId ->
     do
        -- hardcoding bindingindex to 0
-       -- stride = 2, as all my vertexes have 2 coordinates (x & y)
        checkGLErrors $
          glBindVertexBuffer 0
                             bufferObjectId
                             0
+--                             0
                             (fromIntegral (2 * (sizeOf (undefined :: GLfloat))))
        checkGLErrors $ glVertexAttribFormat 0 2 GL_FLOAT GL_FALSE 0
        checkGLErrors $ glVertexAttribBinding 0 0
+--        checkGLErrors $ glVertexAttribPointer 0 2 GL_FLOAT GL_FALSE 0 nullPtr
        withVertexAttribArray 0 f
 
 --   https://www.opengl.org/wiki/Buffer_Object

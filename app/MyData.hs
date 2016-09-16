@@ -30,9 +30,9 @@ staticDataSeries =
     ,MyData 7 1.47 1.57 1000
     ,MyData 8 1.27 1.37 500
     ,MyData 9 1.17 1.25 5000
-    ,MyData 10 1.1 1.15 0]
+    ,MyData 10 1.1 1.15 6000]
 
-buildDataSeries :: IO ( IntMap.IntMap MyData)
+buildDataSeries :: IO (IntMap.IntMap MyData)
 buildDataSeries = do
   -- with 10000 elements, cairo and gloss take 16 seconds to render
   -- with 1000 elements, cairo and gloss are instantaneous

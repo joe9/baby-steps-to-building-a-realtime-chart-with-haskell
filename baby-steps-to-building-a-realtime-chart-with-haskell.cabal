@@ -706,11 +706,11 @@ executable Step026OpenGL
   hs-source-dirs:      app
   main-is:             Step026OpenGL.hs
   other-modules:       ScaleV2
-                     , PriceGraphGloss
-                     , VolumeGraphGloss
-                     , AxisGloss
-                     , ChartGloss
-                     , TypesGloss
+                     , PriceGraphOpenGL
+                     , VolumeGraphOpenGL
+--                      , AxisOpenGL
+                     , ChartOpenGL
+                     , TypesOpenGL
                      , MyData
                      , GLException
                      , BulkVerticesData
