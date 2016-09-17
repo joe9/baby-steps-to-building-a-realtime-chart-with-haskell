@@ -39,7 +39,7 @@ buildDataSeries = do
   -- with 10000 elements, cairo and gloss take 16 seconds to render
   --                      OpenGL is taking around 10 seconds to render
   -- with 1000 elements, cairo and gloss are instantaneous
-  let numberOfElements = 10000
+  let numberOfElements = 10
   bids <- VU.replicateM numberOfElements (randomRIO (1,2))
   asks <- VU.replicateM numberOfElements (randomRIO (2,3))
   volumes <- VU.replicateM numberOfElements (randomRIO (0,1000000))
