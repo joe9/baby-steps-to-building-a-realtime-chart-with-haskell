@@ -1,1 +1,6 @@
 test-cairo
+*.aux
+*.hp
+*.pdf
+*.prof
+*.ps
