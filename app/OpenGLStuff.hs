@@ -67,6 +67,9 @@ colours =
   (\(RGB r g b) -> (doubleToGLfloat r,doubleToGLfloat g,doubleToGLfloat b)) .
   toSRGB
 
+-- the timing here is rudimentary
+-- the proper way to time the gpu is
+-- https://github.com/ekmett/vr/blob/master/timer.h
 drawPictures
   :: Window -> ColorUniformLocation -> [Picture] -> IO ()
 drawPictures win colorUniformLocation !ps =

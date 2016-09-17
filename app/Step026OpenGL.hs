@@ -8,7 +8,6 @@
 module Main where
 
 --   https://ghc.haskell.org/trac/ghc/wiki/Commentary/Packages/PackageImportsProposal
-import Prelude hiding (init)
 import           Control.Concurrent
 import           Control.Concurrent.Async
 import           Data.IORef
@@ -16,6 +15,7 @@ import qualified Data.Vector.Storable     as V
 import qualified Data.Vector.Unboxed      as VU
 import           "gl" Graphics.GL
 import           Graphics.UI.GLFW         as GLFW
+import           Prelude                  hiding (init)
 import           System.Random
 --
 import ChartOpenGL
