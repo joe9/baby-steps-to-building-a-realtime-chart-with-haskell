@@ -9,24 +9,15 @@ module Main where
 
 --   https://ghc.haskell.org/trac/ghc/wiki/Commentary/Packages/PackageImportsProposal
 import Prelude hiding (init)
--- import           System.Exit (exitFailure)
--- import Control.Applicative
 import           Control.Concurrent
 import           Control.Concurrent.Async
-import           Control.Exception.Safe
-import           Control.Monad            (unless, when)
-import           Data.Colour.SRGB
 import           Data.IORef
-import           Data.Maybe               (isNothing)
-import           Data.Maybe
 import qualified Data.Vector.Storable     as V
 import qualified Data.Vector.Unboxed      as VU
 import           "gl" Graphics.GL
 import           Graphics.UI.GLFW         as GLFW
-import           System.Exit
 import           System.Random
 --
-import BulkVerticesData
 import ChartOpenGL
 import GLFWStuff
 import MyDataUnboxedVector
@@ -73,8 +64,8 @@ main =
 
 drawWindow
   :: Window -> ColorUniformLocation -> State -> IO ()
-drawWindow window colorUniformLocation _ =
-  justDraw window colorUniformLocation vertices GL_TRIANGLES 1 0 0 1
+drawWindow win colorUniformLocation _ =
+  justDraw win colorUniformLocation vertices GL_TRIANGLES 1 0 0 1
 
 --      justDraw window colorUniformLocation
 --        vertices GL_LINE_LOOP 1 0 0 1
@@ -83,11 +74,11 @@ renderChart :: IORef (VU.Vector PriceData,LinearScale,LinearScale,LinearScale)
             -> ColorUniformLocation
             -> State
             -> IO ()
-renderChart ref window colorUniformLocation state =
+renderChart ref win colorUniformLocation _ =
   do (series,xscale,pricescale,volumescale) <- readIORef ref
      -- then draw the diagram
      -- With OpenGL, the coordinates should be in the range (-1, 1)
-     drawPictures window
+     drawPictures win
                   colorUniformLocation
                   (chart xscale pricescale volumescale series)
 
@@ -117,4 +108,3 @@ addAnother (series,xscale,pricescale,volumescale) =
             ,addToDomain (addToDomain pricescale b)
                          a
             ,addToDomain volumescale v)
-  where d = VU.last series
