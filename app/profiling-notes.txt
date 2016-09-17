@@ -1,0 +1,53 @@
+
+http://book.realworldhaskell.org/read/profiling-and-optimization.html
+http://stackoverflow.com/questions/3276240/tools-for-analyzing-performance-of-a-haskell-program
+
+-----------------------------------------
+Profiling statistics without any changes:
+-----------------------------------------
+OpenGL version recieved: 3,3,0
+Supported OpenGL Version is: Version {versionMajor = 3, versionMinor = 1, versionRevision = 0}
+Supported OpenGL Version String is: Just "3.1.0 X11 GLX glXGetProcAddress clock_gettime /dev/js"
+    ------------------------------------------------------------
+    '?': Print these instructions
+    'i': Print GLFW information
+
+    * Mouse cursor, keyboard cursor keys, and/or joystick
+      control rotation.
+    * Mouse scroll wheel controls distance from scene.
+    ------------------------------------------------------------
+time taken to draw: 13543.002818 milliseconds
+   1,107,991,576 bytes allocated in the heap
+      42,130,400 bytes copied during GC
+       3,679,864 bytes maximum residency (12 sample(s))
+         569,888 bytes maximum slop
+              15 MB total memory in use (0 MB lost due to fragmentation)
+
+                                     Tot time (elapsed)  Avg pause  Max pause
+  Gen  0      2126 colls,  2125 par    0.906s   0.129s     0.0001s    0.0081s
+  Gen  1        12 colls,    12 par    0.244s   0.037s     0.0030s    0.0157s
+
+  Parallel GC work balance: 8.52% (serial 0%, perfect 100%)
+
+  TASKS: 18 (1 bound, 17 peak workers (17 total), using -N8)
+
+  SPARKS: 0 (0 converted, 0 overflowed, 0 dud, 0 GC'd, 0 fizzled)
+
+  INIT    time    0.003s  (  0.002s elapsed)
+  MUT     time   15.396s  ( 16.023s elapsed)
+  GC      time    1.150s  (  0.165s elapsed)
+  EXIT    time    0.001s  (  0.000s elapsed)
+  Total   time   16.637s  ( 16.190s elapsed)
+
+  Alloc rate    71,965,338 bytes per MUT second
+
+  Productivity  93.1% of total user, 95.6% of total elapsed
+
+gc_alloc_block_sync: 50604
+whitehole_spin: 0
+gen[0].sync: 14
+gen[1].sync: 1082
+
+-----------------------------------------
+Profiling statistics with any changes:
+-----------------------------------------
