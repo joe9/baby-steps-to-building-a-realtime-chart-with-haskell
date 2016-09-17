@@ -20,17 +20,18 @@ import           Data.IORef
 import           Data.Maybe               (isNothing)
 import           Data.Maybe
 import qualified Data.Vector.Storable     as V
+import qualified Data.Vector.Unboxed      as VU
 import           "gl" Graphics.GL
 import           Graphics.UI.GLFW         as GLFW
-import qualified Data.Vector.Unboxed as VU
-import System.Exit
+import           System.Exit
+import           System.Random
 --
 import BulkVerticesData
 import ChartOpenGL
-import ScaleUnboxedVector
 import GLFWStuff
 import MyDataUnboxedVector
 import OpenGLStuff
+import ScaleUnboxedVector
 import TypesOpenGL
 
 -- | Geometry data is a list of four 2D vertices.
@@ -59,8 +60,10 @@ main =
          pricescale = priceScale dataSeries
          volumescale = volumeScale dataSeries
      ref <- newIORef (dataSeries,xscale,pricescale,volumescale)
-     a <- async (threadDelay (1 * 1000 * 1000) >>
-                updatedData ref (dataSeries,xscale,pricescale,volumescale))
+     a <-
+       async (threadDelay (1 * 1000 * 1000) >>
+              updatedData ref
+                          (dataSeries,xscale,pricescale,volumescale))
      (withGLFW . window) (renderChart ref)
      cancel a
 
@@ -71,7 +74,7 @@ drawWindow window colorUniformLocation _ =
 
 --      justDraw window colorUniformLocation
 --        vertices GL_LINE_LOOP 1 0 0 1
-renderChart :: IORef (VU.Vector PriceData, LinearScale,LinearScale,LinearScale)
+renderChart :: IORef (VU.Vector PriceData,LinearScale,LinearScale,LinearScale)
             -> Window
             -> ColorUniformLocation
             -> State
@@ -80,32 +83,34 @@ renderChart ref window colorUniformLocation state =
   do (series,xscale,pricescale,volumescale) <- readIORef ref
      -- then draw the diagram
      -- With OpenGL, the coordinates should be in the range (-1, 1)
-     drawPictures
-       window
-       colorUniformLocation
-       (chart xscale pricescale volumescale series)
+     drawPictures window
+                  colorUniformLocation
+                  (chart xscale pricescale volumescale series)
 
 -- http://stackoverflow.com/questions/5293898/how-to-pass-state-between-event-handlers-in-gtk2hs
 -- the below is not a working solution. Use MVar or TVar or IORef as
 -- recommended in the SO answer above
-updatedData
-  :: IORef (VU.Vector PriceData, LinearScale,LinearScale,LinearScale) -> (VU.Vector PriceData, LinearScale,LinearScale,LinearScale) -> IO b
-updatedData ref oldData  =
-  do let newSeries = addAnother oldData
+updatedData :: IORef (VU.Vector PriceData,LinearScale,LinearScale,LinearScale)
+            -> (VU.Vector PriceData,LinearScale,LinearScale,LinearScale)
+            -> IO b
+updatedData ref oldData =
+  do newSeries <- addAnother oldData
      atomicModifyIORef' ref
                         (\_ -> (newSeries,()))
      threadDelay (1 * 1000 * 1000)
      updatedData ref newSeries
 
 addAnother
-  :: (VU.Vector PriceData, LinearScale,LinearScale,LinearScale) -> (VU.Vector PriceData, LinearScale,LinearScale,LinearScale)
+  :: (VU.Vector PriceData,LinearScale,LinearScale,LinearScale)
+  -> IO (VU.Vector PriceData,LinearScale,LinearScale,LinearScale)
 addAnother (series,xscale,pricescale,volumescale) =
-  (VU.snoc series (b,a,v)
-  , addToDomain xscale (fromIntegral (VU.length series))
-  , addToDomain (addToDomain pricescale b) a
-  , addToDomain volumescale v
-  )
+  do b <- randomRIO (1,2)
+     a <- randomRIO (2,3)
+     v <- randomRIO (0,1000000)
+     return (VU.snoc series (b,a,v)
+            ,addToDomain xscale
+                         (fromIntegral (VU.length series))
+            ,addToDomain (addToDomain pricescale b)
+                         a
+            ,addToDomain volumescale v)
   where d = VU.last series
-        b = 1 + bid d
-        a = 1 + ask d
-        v = 1000 + volume d
