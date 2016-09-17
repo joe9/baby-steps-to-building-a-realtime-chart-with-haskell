@@ -13,12 +13,12 @@ import Data.Colour.Names
 import Data.Monoid
 import "gl" Graphics.GL
 import Linear.V2
+import qualified Data.Vector.Unboxed as VU
+import qualified Data.Vector.Storable as VS
 --
 import OpenGLStuff
-import ScaleV2
+import ScaleUnboxedVector
 import TypesOpenGL
-
-type Price = (Int,Bid,Ask)
 
 -- TODO dots
 --   Pictures ([areaBetweenBidAndAsk areaVertices] <> map dot scaledBids <>
@@ -26,18 +26,18 @@ type Price = (Int,Bid,Ask)
 priceGraph
   :: (Scale xscale
      ,Scale yscale)
-  => xscale -> yscale -> [Price] -> Picture
-priceGraph xScale yScale prices = Picture scaledPrices GL_TRIANGLE_STRIP red Nothing
-  where scaledPrices = concatMap (scaledPrice xScale yScale) prices
+  => xscale -> yscale -> VU.Vector PriceData -> Picture
+priceGraph xScale yScale dataSeries = Picture scaledPrices GL_TRIANGLE_STRIP red Nothing
+  where scaledPrices = (VS.concatMap v2ToVertex . VU.convert . VU.concatMap (scaledPrice xScale yScale) . VU.indexed) dataSeries
 
 -- Scale from the domain (input data range) to the range (absolute coordinate).
 -- TODO use a V3?
 scaledPrice
   :: (Scale x
      ,Scale y)
-  => x -> y -> (Int,Bid,Ask) -> [(V2 Double)]
-scaledPrice xScale yScale (i,b,a) =
-  [V2 ((toRange xScale . fromIntegral) i)
-      ((toRange yScale) b)
-  ,(V2 ((toRange xScale . fromIntegral) i)
-       ((toRange yScale) a))]
+  => x -> y -> (Int, PriceData) -> VU.Vector (V2 Double)
+scaledPrice xScale yScale (x,d) =
+    VU.cons (V2 ((toRange xScale . fromIntegral) x) ((toRange yScale) b))
+     (VU.singleton (V2 ((toRange xScale . fromIntegral) x) ((toRange yScale) a)))
+  where b = bid d
+        a = ask d

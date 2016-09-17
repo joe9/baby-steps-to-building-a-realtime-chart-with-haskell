@@ -9,30 +9,38 @@ module ChartOpenGL where
 
 import Data.Colour.Names
 import Data.Monoid
+import Data.Ord
+import Data.Tuple.Select
 import "gl" Graphics.GL
 import Linear.V2
+import qualified Data.Vector.Unboxed as VU
+import qualified Data.Vector.Storable as VS
 -- import AxisCairo
 import OpenGLStuff
 import PriceGraphOpenGL
-import ScaleV2
+import ScaleUnboxedVector
 import TypesOpenGL
 import VolumeGraphOpenGL
 
-xScale, priceScale, volumeScale ::
-                                [(Int,Bid,Ask,Volume)]
-                                -> LinearScale
+xScale, priceScale, volumeScale :: VU.Vector PriceData -> LinearScale
 xScale dataSeries =
-  LinearScale (map (\(i,_,_,_) -> fromIntegral i) dataSeries)
+  LinearScale
+              (fromIntegral (VU.minIndex dataSeries))
+              (fromIntegral (VU.maxIndex dataSeries))
               (-1 + margin)
               (1 - margin)
 
 priceScale dataSeries =
-  LinearScale (concatMap (\(_,b,a,_) -> [b,a]) dataSeries)
+  LinearScale
+              (VU.foldl' (\a p -> min ((min a . bid) p) (ask p)) 0 dataSeries)
+              (VU.foldl' (\a p -> max ((max a . bid) p) (ask p)) 0 dataSeries)
               (-1 + margin + volumeChartHeight 2)
               (-1 + margin + volumeChartHeight 2 + priceChartHeight 2)
 
 volumeScale dataSeries =
-  LinearScale (map (\(_,_,_,v) -> v) dataSeries)
+  LinearScale
+              (VU.foldl' (\a p -> (min a . volume) p) 0 dataSeries)
+              (VU.foldl' (\a p -> (max a . volume) p) 0 dataSeries)
               (-1 + margin)
               (-1 + margin + volumeChartHeight 2)
 
@@ -41,35 +49,29 @@ volumeScale dataSeries =
 --   Picture [V2 (-1 :: Double) (-1), V2 (-1 :: Double)  1, V2  1  1, V2  1  (-1 :: Double)]
 frame :: Picture
 frame =
-  Picture [V2 (-0.99 :: Double)
-              (-0.99)
-          ,V2 (-0.99 :: Double) 0.99
-          ,V2 0.99 0.99
-          ,V2 0.99 (-0.99 :: Double)]
+  Picture (VS.fromList [(-0.99),(-0.99)
+          ,(-0.99),0.99
+          ,0.99,0.99
+          ,0.99,(-0.99)])
           GL_LINE_LOOP
           green
           Nothing
 
 pChart
-  :: [(Int,Bid,Ask,Volume)] -> Picture
-pChart dataSeries =
-  priceGraph (xScale dataSeries)
-             (priceScale dataSeries)
-             (map (\(i,b,a,_) -> (i,b,a)) dataSeries)
+  :: (Scale x, Scale y) => x -> y -> VU.Vector PriceData -> Picture
+pChart xScale priceScale dataSeries = priceGraph xScale priceScale dataSeries
 
 
 vChart
-  :: [(Int,Bid,Ask,Volume)] -> Picture
-vChart dataSeries =
-  volumeGraph (xScale dataSeries)
-              (volumeScale dataSeries)
-              (map (\(i,_,_,v) -> (i,v)) dataSeries)
+  :: (Scale x, Scale y) => x -> y -> VU.Vector PriceData -> Picture
+vChart xScale volumeScale dataSeries =
+  volumeGraph xScale volumeScale dataSeries
 
 chart
-  :: [(Int,Bid,Ask,Volume)] -> [Picture]
+  :: (Scale x, Scale priceScale, Scale volumeScale) => x -> priceScale -> volumeScale -> VU.Vector PriceData -> [ Picture]
 -- 16 milliseconds
 -- chart w h dataSeries = [frame w h]
-chart dataSeries = [frame , pChart dataSeries , vChart dataSeries]
+chart x p v dataSeries = [frame , pChart x p dataSeries , vChart x v dataSeries]
 
 --   position [(p2 (frameWidth / 2,frameHeight / 2),frame)
 --            ,(p2 (margin,margin + volumeChartHeight),pChart dataSeries)

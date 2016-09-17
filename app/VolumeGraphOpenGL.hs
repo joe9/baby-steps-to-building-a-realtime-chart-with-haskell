@@ -10,46 +10,45 @@ module VolumeGraphOpenGL
   where
 
 import Data.Colour.Names
-import Data.Monoid
 import "gl" Graphics.GL
 import Linear.V2
+import qualified Data.Vector.Unboxed as VU
+import qualified Data.Vector.Storable as VS
 --
 import OpenGLStuff
-import ScaleV2
-import TypesOpenGL hiding (Volume)
-
-type Volume = (Int,Double)
+import ScaleUnboxedVector
+import TypesOpenGL
 
 -- TODO            map dot scaledVolumes)
 volumeGraph
   :: (Scale xscale
      ,Scale yscale)
-  => xscale -> yscale -> [Volume] -> Picture
-volumeGraph xScale yScale volumes =
-  Picture ([startingPoint] <>
-           concatMap (\(V2 x y) ->
-                        [V2 (x - barWidthHalved)
-                            (minRange yScale)
-                        ,V2 (x - barWidthHalved) y
-                        ,V2 (x + barWidthHalved)
-                            (minRange yScale)
-                        ,V2 (x + barWidthHalved) y])
-                     scaledVolumes <>
-           [endingPoint])
+  => xscale -> yscale -> VU.Vector PriceData -> Picture
+volumeGraph xScale yScale dataSeries =
+  Picture ((VS.concatMap v2ToVertex . VU.convert . VU.concatMap (\(V2 x y) ->
+                            VU.fromList
+                                [V2 (x - barWidthHalved)
+                                    (minRange yScale)
+                                ,V2 (x - barWidthHalved) y
+                                ,V2 (x + barWidthHalved) (minRange yScale)
+                                ,V2 (x + barWidthHalved) y]) . VU.imap ( scaledVertex xScale yScale))
+                     dataSeries)
           GL_TRIANGLE_STRIP
           lightgrey
           Nothing
-  where scaledVolumes = scaledPoints xScale yScale volumes
+  where
         chartWidth = maxRange xScale - minRange xScale
-        barWidthHalved = (barWidth chartWidth (length volumes)) / 2
-        startingPoint =
-          V2 (minRange xScale - barWidthHalved)
-             (minRange yScale)
-        endingPoint =
-          V2 (maxRange xScale + barWidthHalved)
-             (minRange yScale)
+        barWidthHalved = (barWidth chartWidth (VU.length dataSeries)) / 2
 
 type NumberOfEntries = Int
 
 barWidth :: Double -> NumberOfEntries -> Double
 barWidth chartWidth n = chartWidth / (fromIntegral n)
+
+-- Scale from the domain (input data range) to the range (absolute coordinate).
+scaledVertex
+  :: (Scale xScale
+     ,Scale yScale)
+  => xScale -> yScale -> Int -> PriceData -> (V2 Double)
+scaledVertex xScale yScale x =
+  V2 ((toRange xScale . fromIntegral) x) . toRange yScale . volume
