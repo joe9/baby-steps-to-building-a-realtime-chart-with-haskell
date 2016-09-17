@@ -33,6 +33,12 @@ vertices :: V.Vector GLfloat
 -- vertices = V.fromList [-0.6,-0.4,0.6,-0.4,0,0.6]
 vertices = V.fromList [-0.9,-0.9,-0.9,0.9,0.9,0.9,0.9,-0.9]
 
+-- fonts can be added using freetype2 or FontyFruity. edwardk
+-- recommends using Valve approach of rendering it with a signed
+-- distance field
+-- nanovg uses Modern OpenGL to render and is a next-generation
+-- gloss. It is a good idea to check it when things get sticky.
+
 -- main :: IO ()
 -- main = withGLFW $ window drawWindow
 -- --   withGLFW $
@@ -69,6 +75,7 @@ drawWindow win colorUniformLocation _ =
 
 --      justDraw window colorUniformLocation
 --        vertices GL_LINE_LOOP 1 0 0 1
+
 renderChart :: IORef (VU.Vector PriceData,LinearScale,LinearScale,LinearScale)
             -> Window
             -> ColorUniformLocation
