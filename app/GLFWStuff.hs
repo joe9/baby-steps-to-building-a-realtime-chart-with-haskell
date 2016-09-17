@@ -81,6 +81,8 @@ withGLFW f =
                         GLFW.windowHint (GLFW.WindowHint'ContextVersionMinor 3)
                         GLFW.windowHint (GLFW.WindowHint'OpenGLProfile GLFW.OpenGLProfile'Core)
                         GLFW.windowHint (GLFW.WindowHint'OpenGLForwardCompat True)
+                        -- disable vsync (0 = off, 1 = on)
+                        GLFW.swapInterval 0
                         f
                 else throw GLFWInitFailed)
 

@@ -1,46 +1,56 @@
-{-# LANGUAGE FlexibleContexts          #-}
-{-# LANGUAGE GADTs                     #-}
-{-# LANGUAGE NoMonomorphismRestriction #-}
-{-# LANGUAGE PackageImports            #-}
-{-# LANGUAGE PartialTypeSignatures     #-}
-{-# LANGUAGE TypeFamilies              #-}
+{-# LANGUAGE PackageImports #-}
 
 module ChartOpenGL where
 
-import Data.Colour.Names
-import Data.Monoid
-import Data.Ord
-import Data.Tuple.Select
-import "gl" Graphics.GL
-import Linear.V2
-import qualified Data.Vector.Unboxed as VU
+import           Data.Colour.Names
 import qualified Data.Vector.Storable as VS
--- import AxisCairo
+import qualified Data.Vector.Unboxed  as VU
+import           "gl" Graphics.GL
+--
 import OpenGLStuff
 import PriceGraphOpenGL
 import ScaleUnboxedVector
 import TypesOpenGL
 import VolumeGraphOpenGL
 
-xScale, priceScale, volumeScale :: VU.Vector PriceData -> LinearScale
+minimumElement, maximumElement
+  :: (Ord a
+     ,VU.Unbox b)
+  => (b -> a) -> VU.Vector b -> a
+minimumElement f =
+  f .
+  VU.minimumBy
+    (\a b ->
+       compare (f a)
+               (f b))
+
+maximumElement f =
+  f .
+  VU.maximumBy
+    (\a b ->
+       compare (f a)
+               (f b))
+
+xScale, priceScale, volumeScale
+  :: VU.Vector PriceData -> LinearScale
 xScale dataSeries =
-  LinearScale
-              (fromIntegral (VU.minIndex dataSeries))
-              (fromIntegral (VU.maxIndex dataSeries))
+  LinearScale 0
+              (fromIntegral (VU.length dataSeries - 1))
               (-1 + margin)
               (1 - margin)
 
 priceScale dataSeries =
   LinearScale
-              (VU.foldl' (\a p -> min ((min a . bid) p) (ask p)) 0 dataSeries)
-              (VU.foldl' (\a p -> max ((max a . bid) p) (ask p)) 0 dataSeries)
-              (-1 + margin + volumeChartHeight 2)
-              (-1 + margin + volumeChartHeight 2 + priceChartHeight 2)
+    (min (minimumElement bid dataSeries)
+         (minimumElement ask dataSeries))
+    (max (maximumElement bid dataSeries)
+         (maximumElement ask dataSeries))
+    (-1 + margin + volumeChartHeight 2)
+    (-1 + margin + volumeChartHeight 2 + priceChartHeight 2)
 
 volumeScale dataSeries =
-  LinearScale
-              (VU.foldl' (\a p -> (min a . volume) p) 0 dataSeries)
-              (VU.foldl' (\a p -> (max a . volume) p) 0 dataSeries)
+  LinearScale (minimumElement volume dataSeries)
+              (maximumElement volume dataSeries)
               (-1 + margin)
               (-1 + margin + volumeChartHeight 2)
 
@@ -49,47 +59,28 @@ volumeScale dataSeries =
 --   Picture [V2 (-1 :: Double) (-1), V2 (-1 :: Double)  1, V2  1  1, V2  1  (-1 :: Double)]
 frame :: Picture
 frame =
-  Picture (VS.fromList [(-0.99),(-0.99)
-          ,(-0.99),0.99
-          ,0.99,0.99
-          ,0.99,(-0.99)])
-          GL_LINE_LOOP
-          green
-          Nothing
+  Picture (VS.fromList [-0.99,-0.99,-0.99,0.99,0.99,0.99,0.99,-0.99]) GL_LINE_LOOP green Nothing
 
 pChart
-  :: (Scale x, Scale y) => x -> y -> VU.Vector PriceData -> Picture
-pChart xScale priceScale dataSeries = priceGraph xScale priceScale dataSeries
-
+  :: (Scale x
+     ,Scale y)
+  => x -> y -> VU.Vector PriceData -> Picture
+pChart xscale pricescale dataSeries = priceGraph xscale pricescale dataSeries
 
 vChart
-  :: (Scale x, Scale y) => x -> y -> VU.Vector PriceData -> Picture
-vChart xScale volumeScale dataSeries =
-  volumeGraph xScale volumeScale dataSeries
+  :: (Scale x
+     ,Scale y)
+  => x -> y -> VU.Vector PriceData -> Picture
+vChart xscale volumescale dataSeries =
+  volumeGraph xscale volumescale dataSeries
 
 chart
-  :: (Scale x, Scale priceScale, Scale volumeScale) => x -> priceScale -> volumeScale -> VU.Vector PriceData -> [ Picture]
--- 16 milliseconds
--- chart w h dataSeries = [frame w h]
-chart x p v dataSeries = [frame , pChart x p dataSeries , vChart x v dataSeries]
+  :: (Scale x
+     ,Scale priceScale
+     ,Scale volumeScale)
+  => x -> priceScale -> volumeScale -> VU.Vector PriceData -> [Picture]
+chart x p v dataSeries = [frame,pChart x p dataSeries,vChart x v dataSeries]
 
---   position [(p2 (frameWidth / 2,frameHeight / 2),frame)
---            ,(p2 (margin,margin + volumeChartHeight),pChart dataSeries)
---            ,(p2 (margin,margin),vChart dataSeries)
---            ,(p2 (frameWidth / 2,margin),bottomAxis (xScale dataSeries))
---            ,(p2 (frameWidth / 2,margin + volumeChartHeight)
---             ,bottomAxis (xScale dataSeries))
---            ,(p2 (frameWidth / 2,frameHeight - margin)
---             ,topAxis (xScale dataSeries))
---            ,(p2 (margin,margin + volumeChartHeight + (priceChartHeight / 2))
---             ,leftAxis (priceScale dataSeries))
---            ,(p2 (margin,margin + (volumeChartHeight / 2))
---             ,leftAxis (volumeScale dataSeries))
---            ,(p2 (frameWidth - margin
---                 ,margin + volumeChartHeight + (priceChartHeight / 2))
---             ,rightAxis (priceScale dataSeries))
---            ,(p2 (frameWidth - margin,margin + (volumeChartHeight / 2))
---             ,rightAxis (volumeScale dataSeries))]
 -- The size of the chart, in logical units. All the diagrams use the
 --  logical units. The translation from the actual units to the logical
 --  units is done by the renderer. 100 corresponds to 100%.

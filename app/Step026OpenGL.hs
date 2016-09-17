@@ -59,6 +59,10 @@ main =
      let xscale = xScale dataSeries
          pricescale = priceScale dataSeries
          volumescale = volumeScale dataSeries
+     putStrLn ("dataSeries: " ++ show dataSeries)
+     putStrLn ("xScale: " ++ show xscale)
+     putStrLn ("pricescale: " ++ show pricescale)
+     putStrLn ("volumeScale: " ++ show volumescale)
      ref <- newIORef (dataSeries,xscale,pricescale,volumescale)
      a <-
        async (threadDelay (1 * 1000 * 1000) >>

@@ -11,7 +11,7 @@ import qualified Data.Vector.Unboxed as VU
 -- reinterpolate(a, b)(t) takes a parameter t in [0,1] and returns the corresponding domain value x in [a,b].
 -- will have to change the Domain values from Double to something more generic
 class Scale s  where
---   domain :: s -> [Double]
+  --   domain :: s -> [Double]
   addToDomain :: s -> Double -> s
   toRange :: s -> Double -> Double
   toDomain :: s -> Double -> Double
@@ -23,12 +23,11 @@ class Scale s  where
   range s = (minRange s,maxRange s)
 
 data LinearScale =
-  LinearScale {
-               sMinDomain :: Double
+  LinearScale {sMinDomain :: Double
               ,sMaxDomain :: Double
-              ,sMinRange :: Double
-              ,sMaxRange :: Double
-              }
+              ,sMinRange  :: Double
+              ,sMaxRange  :: Double}
+  deriving (Eq,Show,Read)
 
 linearScaleDomainToRange
   :: LinearScale -> Double -> Double
@@ -56,12 +55,16 @@ instance Scale LinearScale where
   maxRange = sMaxRange
   addToDomain s d = (addToMinDomain d . addToMaxDomain d) s
 
-addToMinDomain :: Double -> LinearScale -> LinearScale
-addToMinDomain d s = if sMinDomain s > d
-                        then s {sMinDomain = d}
-                        else s
+addToMinDomain
+  :: Double -> LinearScale -> LinearScale
+addToMinDomain d s =
+  if sMinDomain s > d
+     then s {sMinDomain = d}
+     else s
 
-addToMaxDomain :: Double -> LinearScale -> LinearScale
-addToMaxDomain d s = if d > sMaxDomain s
-                        then s {sMaxDomain = d}
-                        else s
+addToMaxDomain
+  :: Double -> LinearScale -> LinearScale
+addToMaxDomain d s =
+  if d > sMaxDomain s
+     then s {sMaxDomain = d}
+     else s
