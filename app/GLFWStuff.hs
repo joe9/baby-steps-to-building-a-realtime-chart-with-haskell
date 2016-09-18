@@ -81,7 +81,9 @@ withGLFW f =
                         GLFW.windowHint (GLFW.WindowHint'ContextVersionMinor 3)
                         GLFW.windowHint (GLFW.WindowHint'OpenGLProfile GLFW.OpenGLProfile'Core)
                         GLFW.windowHint (GLFW.WindowHint'OpenGLForwardCompat True)
-                        -- disable vsync (0 = off, 1 = on)
+                        -- disable vsync (0 = off, 1 = on), 0 is the
+                        -- default value too
+                        -- http://www.glfw.org/docs/latest/quick.html#quick_swap_buffers
                         GLFW.swapInterval 0
                         f
                 else throw GLFWInitFailed)
@@ -219,17 +221,18 @@ runDemo f env state = do
 run :: (GLFW.Window -> ColorUniformLocation -> State -> IO ()) -> Demo ()
 run f = do
     -- number of seconds since GLFW started
-    previousmt <- liftIO GLFW.getTime
+--     previousmt <- liftIO GLFW.getTime
     win <- asks envWindow
 
     draw f
     liftIO $ do
         GLFW.swapBuffers win
         glFlush  -- not necessary, but someone recommended it
-        GLFW.pollEvents
+--         GLFW.pollEvents
+        GLFW.waitEvents
     processEvents
 
-    mt <- liftIO GLFW.getTime
+--     mt <- liftIO GLFW.getTime
 
     q <- liftIO $ GLFW.windowShouldClose win
 --     liftIO (putStrLn ("time taken to draw: " ++ show (1000 * (fromMaybe 0 mt - fromMaybe 0 previousmt)) ++ " milliseconds"))

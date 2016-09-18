@@ -99,6 +99,7 @@ updatedData ref oldData =
   do newSeries <- addAnother oldData
      atomicModifyIORef' ref
                         (\_ -> (newSeries,()))
+     GLFW.postEmptyEvent
      threadDelay (1 * 1000 * 1000)
      updatedData ref newSeries
 
