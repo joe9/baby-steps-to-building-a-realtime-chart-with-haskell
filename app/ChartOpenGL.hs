@@ -75,11 +75,16 @@ vChart xscale volumescale dataSeries =
   volumeGraph xscale volumescale dataSeries
 
 chart
-  :: (Scale x
+  :: (Scale xscale
      ,Scale priceScale
      ,Scale volumeScale)
-  => x -> priceScale -> volumeScale -> VU.Vector PriceData -> [Picture]
-chart x p v dataSeries = [frame,pChart x p dataSeries,vChart x v dataSeries]
+  => xscale -> priceScale -> volumeScale -> VU.Vector PriceData -> [Picture]
+chart x p v dataSeries =
+  [frame
+  ,pChart x p dataSeries
+  ,vChart x v dataSeries
+  ,horizontalCrosshair 0.5
+  ,verticalCrosshair 0.25]
 
 -- The size of the chart, in logical units. All the diagrams use the
 --  logical units. The translation from the actual units to the logical
@@ -96,3 +101,17 @@ chartHeight h = h - (2 * margin)
 priceChartHeight = (* 0.8) . chartHeight
 
 volumeChartHeight = (* 0.2) . chartHeight
+
+horizontalCrosshair :: Double -> Picture
+horizontalCrosshair y =
+  Picture (VS.fromList [-1,realToFrac y,1,realToFrac y])
+          GL_LINES
+          green
+          (Just 0.5)
+
+verticalCrosshair :: Double -> Picture
+verticalCrosshair x =
+  Picture (VS.fromList [realToFrac x,-1,realToFrac x,1])
+          GL_LINES
+          green
+          (Just 0.5)

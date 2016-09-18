@@ -27,7 +27,7 @@ priceGraph
      ,Scale yscale)
   => xscale -> yscale -> VU.Vector PriceData -> Picture
 priceGraph xScale yScale dataSeries =
-  Picture scaledPrices GL_TRIANGLE_STRIP red Nothing
+  Picture scaledPrices GL_TRIANGLE_STRIP lightpink Nothing
   where scaledPrices =
           (VU.convert . VU.concatMap (scaledPrice xScale yScale) . VU.indexed) dataSeries
 --   where scaledPrices = (VS.concatMap v2ToVertex . VU.convert . VU.concatMap (scaledPriceOld xScale yScale) . VU.indexed) dataSeries
