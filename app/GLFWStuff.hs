@@ -229,28 +229,6 @@ run f = do
         GLFW.pollEvents
     processEvents
 
---     state <- get
---     if stateDragging state
---       then do
---           let sodx  = stateDragStartX      state
---               sody  = stateDragStartY      state
---               sodxa = stateDragStartXAngle state
---               sodya = stateDragStartYAngle state
---           (x, y) <- liftIO $ GLFW.getCursorPos win
---           let myrot = (x - sodx) / 2
---               mxrot = (y - sody) / 2
---           put $ state
---             { stateXAngle = sodxa + mxrot
---             , stateYAngle = sodya + myrot
---             }
---       else do
---           (kxrot, kyrot) <- liftIO $ getCursorKeyDirections win
---           (jxrot, jyrot) <- liftIO $ getJoystickDirections GLFW.Joystick'1
---           put $ state
---             { stateXAngle = stateXAngle state + (2 * kxrot) + (2 * jxrot)
---             , stateYAngle = stateYAngle state + (2 * kyrot) + (2 * jyrot)
---             }
-
     mt <- liftIO GLFW.getTime
 
     q <- liftIO $ GLFW.windowShouldClose win
@@ -363,11 +341,11 @@ adjustWindow = do
         glViewport 0 0 (fromIntegral width) (fromIntegral height)
 
 draw :: (GLFW.Window -> ColorUniformLocation -> State -> IO ()) -> Demo ()
+-- draw _ = return ()
 draw f = do
     env   <- ask
     state <- get
-    liftIO $
-        f (envWindow env) (envColorUniformLocation env) state
+    liftIO (f (envWindow env) (envColorUniformLocation env) state)
 
 getCursorKeyDirections :: GLFW.Window -> IO (Double, Double)
 getCursorKeyDirections win = do

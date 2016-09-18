@@ -78,8 +78,6 @@ drawPictures win colorUniformLocation !ps =
      glClearColor 0.05 0.05 0.05 1
      glClear (GL_COLOR_BUFFER_BIT .|. GL_DEPTH_BUFFER_BIT)
      mapM_ (drawPicture win colorUniformLocation) ps
-     GLFW.swapBuffers win
-     glFlush  -- not necessary, but someone recommended it
 --      mt <- GLFW.getTime
 --      putStrLn ("time taken to draw: " ++
 --                         show (1000 * (fromMaybe 0 mt - fromMaybe 0 previousmt)) ++
@@ -90,10 +88,10 @@ drawPicture
 drawPicture _ colorUniformLocation (Picture vertices drawType color maybet) =
   do let (r,g,b) = colours color
      loadColor colorUniformLocation r g b (doubleToGLfloat (fromMaybe 1 maybet))
-     loadBuffer vertices
-     glDrawArrays drawType
-                  0
-                  (div (fromIntegral (VS.length vertices)) 2)
+     withBuffer vertices
+        (glDrawArrays drawType
+                    0
+                    (div (fromIntegral (VS.length vertices)) 2))
 
 --      writeFile "/tmp/temp-haskell-data" (show v2s)
 colorUniformLocationInProgram
@@ -115,16 +113,25 @@ loadColor colorUniformLocation r g b t =
      --   putStrLn ("size of float is: " ++ show ((sizeOf (undefined :: GLfloat))))
      --   putStrLn ("loading number of elements: " ++ show ((sizeOf (undefined :: GLfloat) * V.length bufferData)))
      --   putStrLn ("loading elements: " ++ show bufferData)
-loadBuffer :: VS.Vector GLfloat -> IO ()
-loadBuffer bufferData =
-     VS.unsafeWith
-       bufferData
-       (\ptr ->
-          glBufferData
-            GL_ARRAY_BUFFER
-            (fromIntegral (sizeOf (undefined :: GLfloat) * VS.length bufferData))
-            (castPtr ptr)
-            GL_STREAM_DRAW)
+-- orphan the used buffer as described in
+-- https://www.opengl.org/wiki/Buffer_Object_Streaming#Buffer_re-specification
+withBuffer :: VS.Vector GLfloat -> IO () -> IO ()
+withBuffer bufferData =
+  let size = fromIntegral (sizeOf (undefined :: GLfloat) * VS.length bufferData)
+  in bracket_
+        (VS.unsafeWith
+            bufferData
+            (\ptr ->
+                glBufferData
+                    GL_ARRAY_BUFFER
+                    size
+                    (castPtr ptr)
+                    GL_STREAM_DRAW))
+        (glBufferData
+                GL_ARRAY_BUFFER
+                size
+                nullPtr
+                GL_STREAM_DRAW)
 
 -- basic draw function without using the picture
 justDraw :: Window
@@ -140,16 +147,16 @@ justDraw window colorUniformLocation vertices drawType r g b t =
   do glClearColor 0.05 0.05 0.05 1
      glClear (GL_COLOR_BUFFER_BIT .|. GL_DEPTH_BUFFER_BIT)
      loadColor colorUniformLocation r g b t
-     loadBuffer vertices
      putStrLn ("justDraw: size of float is: " ++
                show (sizeOf (undefined :: GLfloat)))
      putStrLn ("justDraw: loading number of elements: " ++
                show (sizeOf (undefined :: GLfloat) * VS.length vertices))
      putStrLn ("justDraw: length of vertices: " ++ show (VS.length vertices))
      putStrLn ("justDraw: loading elements: " ++ show vertices)
-     glDrawArrays drawType
-                  0
-                  (div (fromIntegral (VS.length vertices)) 2)
+     withBuffer vertices
+        (glDrawArrays drawType
+                    0
+                    (div (fromIntegral (VS.length vertices)) 2))
      GLFW.swapBuffers window
      glFlush  -- not necessary, but someone recommended it
 
