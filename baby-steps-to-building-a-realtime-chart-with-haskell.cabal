@@ -738,6 +738,7 @@ executable Step026OpenGL
                      , stm
                      , pretty
                      , tuple
+                     , time
   default-language:    Haskell2010
   other-extensions:    DeriveDataTypeable
                      , FlexibleContexts

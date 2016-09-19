@@ -112,7 +112,7 @@ updatedData ref canvas label series =
 
 addAnother :: VU.Vector PriceData -> VU.Vector PriceData
 addAnother ds =
-  VU.snoc ds (b,a,v)
+  VU.snoc ds (b,a,v,0)
   where d = VU.last ds
         b = 1 + bid d
         a = 1 + ask d
