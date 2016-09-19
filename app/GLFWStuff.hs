@@ -36,6 +36,8 @@ data State = State
     , stateDragging        :: !Bool
     , stateDragStartX      :: !Double
     , stateDragStartY      :: !Double
+    , stateCursorX         :: !Double
+    , stateCursorY         :: !Double
     }
 
 type Demo = RWST Env () State IO
@@ -81,15 +83,12 @@ withGLFW f =
                         GLFW.windowHint (GLFW.WindowHint'ContextVersionMinor 3)
                         GLFW.windowHint (GLFW.WindowHint'OpenGLProfile GLFW.OpenGLProfile'Core)
                         GLFW.windowHint (GLFW.WindowHint'OpenGLForwardCompat True)
-                        -- disable vsync (0 = off, 1 = on), 0 is the
-                        -- default value too
-                        -- http://www.glfw.org/docs/latest/quick.html#quick_swap_buffers
-                        GLFW.swapInterval 0
                         f
                 else throw GLFWInitFailed)
 
-window :: (GLFW.Window -> ColorUniformLocation -> State -> IO ()) -> IO ()
-window f = do
+window :: ((a -> IO ()) -> IO ())
+       -> (GLFW.Window -> ColorUniformLocation -> State -> a -> IO a) -> IO ()
+window onWindow renderer = do
     let width  = 640
         height = 480
 
@@ -111,7 +110,11 @@ window f = do
         GLFW.setKeyCallback             win $ Just $ keyCallback             eventsChan
         GLFW.setCharCallback            win $ Just $ charCallback            eventsChan
 
-        GLFW.swapInterval 1
+        -- disable vsync (0 = off, 1 = on), 0 is the
+        -- default value too
+        -- http://www.glfw.org/docs/latest/quick.html#quick_swap_buffers
+        -- GLFW.swapInterval 1
+        GLFW.swapInterval 0
 
 --         GL.position (GL.Light 0) GL.$= GL.Vertex4 5 5 10 0
 --         GL.light    (GL.Light 0) GL.$= GL.Enabled
@@ -144,10 +147,11 @@ window f = do
               , stateDragging        = False
               , stateDragStartX      = 0
               , stateDragStartY      = 0
+              , stateCursorX         = 0
+              , stateCursorY         = 0
               }
-        runDemo f env state
-
-    putStrLn "ended!"
+        onWindow (runDemo renderer env state)
+        return ()
 
 --------------------------------------------------------------------------------
 
@@ -157,16 +161,17 @@ window f = do
 withWindow :: Int -> Int -> String -> (GLFW.Window -> ColorUniformLocation -> IO ()) -> IO ()
 withWindow width height title f = do
   bracket (GLFW.createWindow width height title Nothing Nothing)
-          (\maybeWindow -> GLFW.setErrorCallback (Just simpleErrorCallback) >> maybe (return ()) GLFW.destroyWindow maybeWindow)
+          (\maybeWindow -> GLFW.setErrorCallback (Just simpleErrorCallback)
+                            >> maybe (return ()) GLFW.destroyWindow maybeWindow
+                            >> putStrLn "ended window!")
           (maybe (return ())
                  (\win ->
                     do GLFW.makeContextCurrent (Just win)
                        -- OpenGL stuff
                        withProgram
                          (\programId ->
-                            withVertexArrayObject
-                              (colorUniformLocationInProgram programId >>=
-                               f win))))
+                              colorUniformLocationInProgram programId >>=
+                               f win)))
 
 -- Callback functions must be set, so GLFW knows to call them. The
 -- function to set the error callback is one of the few GLFW functions
@@ -213,30 +218,32 @@ charCallback            tc win c          = atomically $ writeTQueue tc $ EventC
 
 --------------------------------------------------------------------------------
 
-runDemo :: (GLFW.Window -> ColorUniformLocation -> State -> IO ()) -> Env -> State ->  IO ()
-runDemo f env state = do
+runDemo :: (GLFW.Window -> ColorUniformLocation -> State -> a -> IO a) ->  Env -> State -> a -> IO ()
+runDemo f env state ds = do
     printInstructions
-    void $ evalRWST (adjustWindow >> run f) env state
+    void $ evalRWST (adjustWindow >> run f ds) env state
 
-run :: (GLFW.Window -> ColorUniformLocation -> State -> IO ()) -> Demo ()
-run f = do
+run :: (GLFW.Window -> ColorUniformLocation -> State -> a -> IO a) -> a -> Demo ()
+run drawFunction ds = do
     -- number of seconds since GLFW started
 --     previousmt <- liftIO GLFW.getTime
     win <- asks envWindow
+    colorUniformLocation <- asks envColorUniformLocation
+    state <- get
 
-    draw f
-    liftIO $ do
-        GLFW.swapBuffers win
-        glFlush  -- not necessary, but someone recommended it
---         GLFW.pollEvents
-        GLFW.waitEvents
+    -- TODO bug: on empty event, should updated the chart with new data
+    liftIO (GLFW.waitEvents)
     processEvents
-
---     mt <- liftIO GLFW.getTime
-
-    q <- liftIO $ GLFW.windowShouldClose win
---     liftIO (putStrLn ("time taken to draw: " ++ show (1000 * (fromMaybe 0 mt - fromMaybe 0 previousmt)) ++ " milliseconds"))
-    unless q (run f)
+    q <- liftIO (GLFW.windowShouldClose win)
+    unless q
+        (do uuds <-
+                liftIO (do uds <- liftIO (drawFunction win colorUniformLocation state ds)
+                           GLFW.swapBuffers win
+                           -- not necessary, but someone recommended it
+                           glFlush
+                           return uds)
+            run drawFunction uuds
+        )
 
 processEvents :: Demo ()
 processEvents = do
@@ -246,6 +253,7 @@ processEvents = do
       Just e -> do
           processEvent e
           processEvents
+--       Nothing -> liftIO (putStrLn "no event in the queue") >> return ()
       Nothing -> return ()
 
 processEvent :: Event -> Demo ()
@@ -302,12 +310,18 @@ processEvent ev =
               y' = round y :: Int
           printEvent "cursor pos" [show x', show y']
           state <- get
-          when (stateMouseDown state && not (stateDragging state)) $
-            put $ state
-              { stateDragging        = True
-              , stateDragStartX      = x
-              , stateDragStartY      = y
-              }
+          if (stateMouseDown state && not (stateDragging state))
+            then
+                put (state { stateDragging        = True
+                            , stateDragStartX      = x
+                            , stateDragStartY      = y
+                            , stateCursorX         = x
+                            , stateCursorY         = y
+                            })
+            else
+                put (state { stateCursorX         = x
+                           , stateCursorY         = y
+                           })
 
       (EventCursorEnter _ cs) ->
           printEvent "cursor enter" [show cs]
@@ -342,13 +356,6 @@ adjustWindow = do
 
     liftIO $ do
         glViewport 0 0 (fromIntegral width) (fromIntegral height)
-
-draw :: (GLFW.Window -> ColorUniformLocation -> State -> IO ()) -> Demo ()
--- draw _ = return ()
-draw f = do
-    env   <- ask
-    state <- get
-    liftIO (f (envWindow env) (envColorUniformLocation env) state)
 
 getCursorKeyDirections :: GLFW.Window -> IO (Double, Double)
 getCursorKeyDirections win = do

@@ -705,7 +705,7 @@ executable Step025Gloss
 executable Step026OpenGL
   hs-source-dirs:      app
   main-is:             Step026OpenGL.hs
-  other-modules:       ScaleUnboxedVector
+  other-modules:       ScaleDataUnboxedVector
                      , PriceGraphOpenGL
                      , VolumeGraphOpenGL
 --                      , AxisOpenGL

@@ -1,4 +1,3 @@
-{-# LANGUAGE BangPatterns              #-}
 {-# LANGUAGE DeriveAnyClass            #-}
 {-# LANGUAGE FlexibleContexts          #-}
 {-# LANGUAGE GADTs                     #-}
@@ -10,21 +9,20 @@
 module OpenGLStuff where
 
 --   https://ghc.haskell.org/trac/ghc/wiki/Commentary/Packages/PackageImportsProposal
-import Prelude hiding (init)
-import Control.Concurrent
-import Control.Exception.Safe
-import Foreign.C.String
-import Foreign.Marshal.Alloc
-import Foreign.Marshal.Array
+import           Control.Concurrent
+import           Control.Exception.Safe
+import qualified Data.ByteString        as BS
 import           Data.Colour.SRGB
-import Foreign.Ptr
-import Foreign.Storable
-import Graphics.UI.GLFW as GLFW
-import           Data.Bits
-import qualified Data.ByteString      as BS
 import           Data.Maybe
-import qualified Data.Vector.Storable as VS
+import qualified Data.Vector.Storable   as VS
+import           Foreign.C.String
+import           Foreign.Marshal.Alloc
+import           Foreign.Marshal.Array
+import           Foreign.Ptr
+import           Foreign.Storable
 import           "gl" Graphics.GL
+import           Graphics.UI.GLFW       as GLFW
+import           Prelude                hiding (init)
 import           Quine.Debug
 import           Quine.GL.Error
 --
@@ -52,6 +50,7 @@ fragmentShaderSource =
 
 type ColorUniformLocation = GLint
 
+-- TODO use glPolygonMode instead of GL_LINES or GL_TRIANGLE_STRIP
 data Picture =
   Picture !(VS.Vector Float) -- x and y vertices
           !GLenum -- drawing primitive
@@ -61,45 +60,33 @@ data Picture =
 doubleToGLfloat :: Double -> GLfloat
 doubleToGLfloat = realToFrac :: Double -> GLfloat
 
-colours
+rgb
   :: Colour Double -> (GLfloat,GLfloat,GLfloat)
-colours =
+rgb =
   (\(RGB r g b) -> (doubleToGLfloat r,doubleToGLfloat g,doubleToGLfloat b)) .
   toSRGB
 
 -- the timing here is rudimentary
 -- the proper way to time the gpu is
 -- https://github.com/ekmett/vr/blob/master/timer.h
-drawPictures
-  :: Window -> ColorUniformLocation -> [Picture] -> IO ()
-drawPictures win colorUniformLocation !ps =
-  do
 --      previousmt <- GLFW.getTime
-     glClearColor 0.05 0.05 0.05 1
-     glClear (GL_COLOR_BUFFER_BIT .|. GL_DEPTH_BUFFER_BIT)
-     mapM_ (drawPicture win colorUniformLocation) ps
 --      mt <- GLFW.getTime
 --      putStrLn ("time taken to draw: " ++
 --                         show (1000 * (fromMaybe 0 mt - fromMaybe 0 previousmt)) ++
 --                         " milliseconds")
-
-drawPicture
-  :: Window -> ColorUniformLocation -> Picture -> IO ()
-drawPicture _ colorUniformLocation (Picture vertices drawType color maybet) =
-  do let (r,g,b) = colours color
+drawWith
+  :: Window -> ColorUniformLocation -> VertexArrayId -> BufferId -> Colour Double -> Maybe Double -> (IO ()) -> IO ()
+drawWith _ colorUniformLocation vaid bufferId color maybet f =
+  do let (r,g,b) = rgb color
      loadColor colorUniformLocation r g b (doubleToGLfloat (fromMaybe 1 maybet))
-     withBuffer vertices
-        (glDrawArrays drawType
-                    0
-                    (div (fromIntegral (VS.length vertices)) 2))
-
+     usingBuffer vaid bufferId f
 --      writeFile "/tmp/temp-haskell-data" (show v2s)
+
 colorUniformLocationInProgram
   :: ProgramId -> IO ColorUniformLocation
 colorUniformLocationInProgram programId =
-  withCString
-    "color"
-    (checkGLErrors . glGetUniformLocation programId)
+  withCString "color"
+              (checkGLErrors . glGetUniformLocation programId)
 
 loadColor :: ColorUniformLocation
           -> GLfloat
@@ -110,16 +97,33 @@ loadColor :: ColorUniformLocation
 loadColor colorUniformLocation r g b t =
   glUniform4f colorUniformLocation r g b t
 
-     --   putStrLn ("size of float is: " ++ show ((sizeOf (undefined :: GLfloat))))
-     --   putStrLn ("loading number of elements: " ++ show ((sizeOf (undefined :: GLfloat) * V.length bufferData)))
-     --   putStrLn ("loading elements: " ++ show bufferData)
+--   putStrLn ("size of float is: " ++ show ((sizeOf (undefined :: GLfloat))))
+--   putStrLn ("loading number of elements: " ++ show ((sizeOf (undefined :: GLfloat) * V.length bufferData)))
+--   putStrLn ("loading elements: " ++ show bufferData)
 -- orphan the used buffer as described in
 -- https://www.opengl.org/wiki/Buffer_Object_Streaming#Buffer_re-specification
-withBuffer :: VS.Vector GLfloat -> IO () -> IO ()
-withBuffer bufferData =
-  let size = fromIntegral (sizeOf (undefined :: GLfloat) * VS.length bufferData)
-  in bracket_
-        (VS.unsafeWith
+-- http://stackoverflow.com/a/11700577
+-- VAO here is like a profile that contains a lot of properties
+--   (imagine a smart device profile). Instead of changing color,
+--   desktop, fonts.. etc every time you wish to change them, you do
+--   that once and save it under a profile name. Then you just switch
+--   the profile.
+loadUsingBuffer
+  :: VertexArrayId -> BufferId -> VS.Vector GLfloat -> IO ()
+loadUsingBuffer vertexArrayId bufferid bufferData =
+  usingBuffer vertexArrayId bufferid (loadBuffer bufferData)
+
+usingBuffer
+  :: VertexArrayId -> BufferId -> (IO ()) -> IO ()
+usingBuffer vertexArrayId bufferid f =
+  glBindVertexArray vertexArrayId >>
+  glInvalidateBufferData bufferid >>
+  f
+
+loadBuffer :: VS.Vector GLfloat -> IO ()
+loadBuffer bufferData =
+    let size = fromIntegral (sizeOf (undefined :: GLfloat) * VS.length bufferData)
+    in (VS.unsafeWith
             bufferData
             (\ptr ->
                 glBufferData
@@ -127,102 +131,104 @@ withBuffer bufferData =
                     size
                     (castPtr ptr)
                     GL_STREAM_DRAW))
-        (glBufferData
-                GL_ARRAY_BUFFER
-                size
-                nullPtr
-                GL_STREAM_DRAW)
 
--- basic draw function without using the picture
-justDraw :: Window
-         -> ColorUniformLocation
-         -> VS.Vector GLfloat
-         -> GLenum
-         -> GLfloat
-         -> GLfloat
-         -> GLfloat
-         -> GLfloat
-         -> IO ()
-justDraw window colorUniformLocation vertices drawType r g b t =
-  do glClearColor 0.05 0.05 0.05 1
-     glClear (GL_COLOR_BUFFER_BIT .|. GL_DEPTH_BUFFER_BIT)
-     loadColor colorUniformLocation r g b t
-     putStrLn ("justDraw: size of float is: " ++
-               show (sizeOf (undefined :: GLfloat)))
-     putStrLn ("justDraw: loading number of elements: " ++
-               show (sizeOf (undefined :: GLfloat) * VS.length vertices))
-     putStrLn ("justDraw: length of vertices: " ++ show (VS.length vertices))
-     putStrLn ("justDraw: loading elements: " ++ show vertices)
-     withBuffer vertices
-        (glDrawArrays drawType
-                    0
-                    (div (fromIntegral (VS.length vertices)) 2))
-     GLFW.swapBuffers window
-     glFlush  -- not necessary, but someone recommended it
+-- -- basic draw function without using the picture
+-- justDraw :: Window
+--          -> ColorUniformLocation
+--          -> VS.Vector GLfloat
+--          -> GLenum
+--          -> GLfloat
+--          -> GLfloat
+--          -> GLfloat
+--          -> GLfloat
+--          -> IO ()
+-- justDraw window colorUniformLocation vertices drawType r g b t =
+--   do glClearColor 0.05 0.05 0.05 1
+--      glClear (GL_COLOR_BUFFER_BIT .|. GL_DEPTH_BUFFER_BIT)
+--      loadColor colorUniformLocation r g b t
+--      putStrLn ("justDraw: size of float is: " ++
+--                show (sizeOf (undefined :: GLfloat)))
+--      putStrLn ("justDraw: loading number of elements: " ++
+--                show (sizeOf (undefined :: GLfloat) * VS.length vertices))
+--      putStrLn ("justDraw: length of vertices: " ++ show (VS.length vertices))
+--      putStrLn ("justDraw: loading elements: " ++ show vertices)
+--      usingBuffer vertices
+--         (glDrawArrays drawType
+--                     0
+--                     (div (fromIntegral (VS.length vertices)) 2))
+--      GLFW.swapBuffers window
+--      glFlush  -- not necessary, but someone recommended it
+-- http://stackoverflow.com/questions/7218147/render-multiple-objects-with-opengl-es-2-0
+-- VAO here is like a profile that contains a lot of properties
+-- (imagine a smart device profile). Instead of changing color,
+-- desktop, fonts.. etc every time you wish to change them, you
+-- do that once and save it under a profile name. Then you just
+-- switch the profile.
+type VertexArrayId = GLuint
 
-withVertexArrayObject :: IO a -> IO a
-withVertexArrayObject f =
-  bracket (alloca (\vertexArrayObjectPtr ->
-                     do checkGLErrors $
-                          glGenVertexArrays 1 vertexArrayObjectPtr
-                        peek vertexArrayObjectPtr))
-          (\vertexArrayObjectId ->
-             alloca (\vertexArrayObjectPtr ->
-                       do poke vertexArrayObjectPtr vertexArrayObjectId
-                          checkGLErrors $
-                            glDeleteVertexArrays 1 vertexArrayObjectPtr))
-          (\vertexArrayObjectId ->
-             do glBindVertexArray vertexArrayObjectId
-                withVertexBufferObject f)
+withVertexArray
+  :: (VertexArrayId -> BufferId -> IO a) -> IO a
+withVertexArray f =
+  bracket (alloca (\vertexArrayPtr ->
+                     do checkGLErrors $ glGenVertexArrays 1 vertexArrayPtr
+                        peek vertexArrayPtr))
+          (\vertexArrayId ->
+             alloca (\vertexArrayPtr ->
+                       do poke vertexArrayPtr vertexArrayId
+                          checkGLErrors $ glDeleteVertexArrays 1 vertexArrayPtr))
+          (\vertexArrayId ->
+             do glBindVertexArray vertexArrayId
+                withVertexBuffer (f vertexArrayId))
 
 type AttributeIndex = GLuint
 
-withVertexAttribArray :: AttributeIndex -> IO d -> IO d
-withVertexAttribArray attributeIndex =
-  bracket_ (checkGLErrors $ glEnableVertexAttribArray attributeIndex)
-           (checkGLErrors $ glDisableVertexAttribArray attributeIndex)
-
 -- following https://www.opengl.org/wiki/Vertex_Specification
 -- separating format specification from buffers ARB_vertex_attrib_binding
-withVertexBufferObject :: IO d -> IO d
-withVertexBufferObject f =
-  withBufferObject $
-  \bufferObjectId ->
+withVertexBuffer :: (BufferId -> IO a) -> IO a
+withVertexBuffer f =
+  withBuffer $
+  \bufferId ->
     do
        -- hardcoding bindingindex to 0
        checkGLErrors $
          glBindVertexBuffer
            0
-           bufferObjectId
+           bufferId
            0
            --                             0
            (fromIntegral (2 * sizeOf (undefined :: GLfloat)))
        checkGLErrors $ glVertexAttribFormat 0 2 GL_FLOAT GL_FALSE 0
        checkGLErrors $ glVertexAttribBinding 0 0
        --        checkGLErrors $ glVertexAttribPointer 0 2 GL_FLOAT GL_FALSE 0 nullPtr
-       withVertexAttribArray 0 f
+       withVertexAttribArray 0
+                             (f bufferId)
 
---   https://www.opengl.org/wiki/Buffer_Object
+--   https://www.opengl.org/wiki/BufferObject
 -- bufferObjectType : mostly GL_ARRAY_BUFFER
 -- usage : for axis and frame: GL_DYNAMIC_DRAW -- data changes occassionally
 --                   others: GL_STREAM_DRAW -- data changes after every use
 -- GLsizeiptr: It's not a pointer. It's an integral type the same size as a pointer.
 --   http://stackoverflow.com/questions/26758129/glbufferdata-second-arg-is-glsizeiptr-not-glsizei-why
-type BufferObjectId = GLuint
+type BufferId = GLuint
 
-withBufferObject
-  :: (BufferObjectId -> IO c) -> IO c
-withBufferObject f =
-  bracket (alloca (\bufferObjectPtr ->
-                     do checkGLErrors $ glGenBuffers 1 bufferObjectPtr
-                        peek bufferObjectPtr))
-          (\bufferObjectId ->
-             alloca (\bufferObjectPtr ->
-                       do poke bufferObjectPtr bufferObjectId
-                          checkGLErrors $ glDeleteBuffers 1 bufferObjectPtr))
-          (\bufferObjectId ->
-             do glBindBuffer GL_ARRAY_BUFFER bufferObjectId
-                f bufferObjectId)
+withBuffer :: (BufferId -> IO c) -> IO c
+withBuffer f =
+  bracket (alloca (\bufferPtr ->
+                     do checkGLErrors $ glGenBuffers 1 bufferPtr
+                        peek bufferPtr))
+          (\bufferId ->
+             alloca (\bufferPtr ->
+                       do poke bufferPtr bufferId
+                          checkGLErrors $ glDeleteBuffers 1 bufferPtr))
+          (\bufferId ->
+             do glBindBuffer GL_ARRAY_BUFFER bufferId
+                f bufferId)
+
+withVertexAttribArray
+  :: AttributeIndex -> IO a -> IO a
+withVertexAttribArray attributeIndex =
+  bracket_ (checkGLErrors $ glEnableVertexAttribArray attributeIndex)
+           (checkGLErrors $ glDisableVertexAttribArray attributeIndex)
 
 type ProgramId = GLuint
 
@@ -265,7 +271,7 @@ withProgram f =
                          if linkStatus == GL_TRUE
                             then checkGLErrors (glUseProgram programId)
                             else errors >>=
-                                    throw . ProgramCompilationFailed infoLog))
+                                 throw . ProgramCompilationFailed infoLog))
                 -- do not bother rendering on the back face
                 -- I like writing the vertices is clockwise order
                 -- https://www.opengl.org/wiki/Face_Culling
@@ -346,36 +352,13 @@ getShaderId shaderType shaderSource =
              if compileStatus == GL_TRUE
                 then return shaderId
                 else errors >>=
-                        throw . ShaderProgramCompilationFailed (show shaderType)
-                                                              (show shaderSource)
-                                                              infoLog
-                                                              )
+                     throw .
+                     ShaderProgramCompilationFailed (show shaderType)
+                                                    (show shaderSource)
+                                                    infoLog)
 
 -- according to the docs, this should be a loop checking until there
 -- are no errors
 -- https://www.opengl.org/wiki/GLAPI/glGetError
 checkGLErrors :: IO a -> IO a
 checkGLErrors f = f >>= (\v -> throwErrors >> return v)
-
--- I do not care about the others
-data BufferObjectType
-  = ARRAY_BUFFER
-  | ELEMENT_ARRAY_BUFFER
-
-data BufferUsageType
-  = STATIC_DRAW
-  | DYNAMIC_DRAW
-  | STREAM_DRAW
-
-bufferObjectTypeToEnum :: (Eq a
-                          ,Num a)
-                       => BufferObjectType -> a
-bufferObjectTypeToEnum ARRAY_BUFFER = GL_ARRAY_BUFFER
-bufferObjectTypeToEnum ELEMENT_ARRAY_BUFFER = GL_ELEMENT_ARRAY_BUFFER
-
-bufferUsageTypeToEnum :: (Eq a
-                         ,Num a)
-                      => BufferUsageType -> a
-bufferUsageTypeToEnum STATIC_DRAW  = GL_STATIC_DRAW
-bufferUsageTypeToEnum DYNAMIC_DRAW = GL_DYNAMIC_DRAW
-bufferUsageTypeToEnum STREAM_DRAW  = GL_STREAM_DRAW

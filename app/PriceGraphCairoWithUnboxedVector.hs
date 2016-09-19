@@ -11,8 +11,8 @@ module PriceGraphCairoWithUnboxedVector
 import Graphics.Rendering.Cairo        hiding (scale, x, y)
 import qualified Data.Vector.Unboxed as VU
 import Data.Colour.Names
-import Linear.V2
 import Data.Colour.SRGB
+import Linear.V2
 --
 import ScaleUnboxedVector
 import TypesOpenGL

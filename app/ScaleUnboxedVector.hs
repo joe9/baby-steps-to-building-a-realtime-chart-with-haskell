@@ -5,8 +5,6 @@
 
 module ScaleUnboxedVector where
 
-import qualified Data.Vector.Unboxed as VU
-
 -- deinterpolate(a, b)(x) takes a domain value x in [a,b] and returns the corresponding parameter t in [0,1].
 -- reinterpolate(a, b)(t) takes a parameter t in [0,1] and returns the corresponding domain value x in [a,b].
 -- will have to change the Domain values from Double to something more generic

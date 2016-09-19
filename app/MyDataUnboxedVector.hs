@@ -1,7 +1,8 @@
 module MyDataUnboxedVector where
 
 import           Control.Monad
-import           Data.List
+import           Data.Time.Clock.POSIX
+import           Data.Int
 import qualified Data.Vector.Unboxed as VU
 import           Prelude
 import           System.Random
@@ -21,16 +22,16 @@ import           TypesOpenGL
 staticDataSeries :: VU.Vector PriceData
 staticDataSeries =
   VU.fromList
-    [(1.19,1.26,1000)
-    ,(1.22,1.27,2000)
-    ,(1.27,1.37,1000)
-    ,(1.37,1.47,0)
-    ,(1.67,1.97,3000)
-    ,(1.57,1.67,1000)
-    ,(1.47,1.57,1000)
-    ,(1.27,1.37,500)
-    ,(1.17,1.25,5000)
-    ,(1.1,1.15,6000)]
+    [(1.19,1.26,1000,1474308005)
+    ,(1.22,1.27,2000,1474308015)
+    ,(1.27,1.37,1000,1474308020)
+    ,(1.37,1.47,0,1474308021)
+    ,(1.67,1.97,3000,1474308022)
+    ,(1.57,1.67,1000,1474308023)
+    ,(1.47,1.57,1000,1474308024)
+    ,(1.27,1.37,500,1474308025)
+    ,(1.17,1.25,5000,1474308026)
+    ,(1.1,1.15,6000,1474308027)]
 
 buildDataSeries :: IO (VU.Vector PriceData)
 buildDataSeries =
@@ -48,4 +49,6 @@ buildDataSeries =
      volumes <-
        VU.replicateM numberOfElements
                      (randomRIO (0,1000000))
-     return (VU.zip3 bids asks volumes)
+     asofs <-
+       VU.replicateM numberOfElements (fmap ((fromIntegral :: Integer -> Int64) . round) getPOSIXTime)
+     return (VU.zip4 bids asks volumes asofs)

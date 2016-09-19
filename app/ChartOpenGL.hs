@@ -7,9 +7,10 @@ import qualified Data.Vector.Storable as VS
 import qualified Data.Vector.Unboxed  as VU
 import           "gl" Graphics.GL
 --
+import GLFWStuff
 import OpenGLStuff
 import PriceGraphOpenGL
-import ScaleUnboxedVector
+import ScaleDataUnboxedVector
 import TypesOpenGL
 import VolumeGraphOpenGL
 
@@ -32,15 +33,15 @@ maximumElement f =
                (f b))
 
 xScale, priceScale, volumeScale
-  :: VU.Vector PriceData -> LinearScale
+  :: VU.Vector PriceData -> Scale
 xScale dataSeries =
-  LinearScale 0
+  linearScale 0
               (fromIntegral (VU.length dataSeries - 1))
               (-1 + margin)
               (1 - margin)
 
 priceScale dataSeries =
-  LinearScale
+  linearScale
     (min (minimumElement bid dataSeries)
          (minimumElement ask dataSeries))
     (max (maximumElement bid dataSeries)
@@ -49,42 +50,51 @@ priceScale dataSeries =
     (-1 + margin + volumeChartHeight 2 + priceChartHeight 2)
 
 volumeScale dataSeries =
-  LinearScale (minimumElement volume dataSeries)
+  linearScale (minimumElement volume dataSeries)
               (maximumElement volume dataSeries)
               (-1 + margin)
               (-1 + margin + volumeChartHeight 2)
 
--- Add a frame for the chart. The frame dimensions are the width and
---  height provided on the command line.
---   Picture [V2 (-1 :: Double) (-1), V2 (-1 :: Double)  1, V2  1  1, V2  1  (-1 :: Double)]
-frame :: Picture
-frame =
-  Picture (VS.fromList [-0.99,-0.99,-0.99,0.99,0.99,0.99,0.99,-0.99]) GL_LINE_LOOP green Nothing
+-- Add a frame for the chart.
+frameDrawable
+  :: VertexArrayId -> BufferId -> Drawable
+frameDrawable vaId bId =
+  Drawable {draw = return ()
+           ,previousValue = ValueCursorPosition 0 0
+           ,currentValue =
+              (\s _ ->
+                 ValueCursorPosition (stateCursorX s)
+                                      (stateCursorY s))
+           ,loadBufferAndBuildDrawFunction =
+              (\_ _ _ _ d ->
+                 do let vertices =
+                          VS.fromList
+                            [-0.99,-0.99,-0.99,0.99,0.99,0.99,0.99,-0.99]
+                    loadUsingBuffer (vertexArrayId d)
+                                    (bufferId d)
+                                    vertices
+                    return (glDrawArrays GL_LINE_LOOP
+                                         0
+                                         (div (fromIntegral (VS.length vertices)) 2)))
+           ,vertexArrayId = vaId
+           ,bufferId = bId
+           ,colour = green
+           ,transparency = Nothing}
 
-pChart
-  :: (Scale x
-     ,Scale y)
-  => x -> y -> VU.Vector PriceData -> Picture
-pChart xscale pricescale dataSeries = priceGraph xscale pricescale dataSeries
-
-vChart
-  :: (Scale x
-     ,Scale y)
-  => x -> y -> VU.Vector PriceData -> Picture
-vChart xscale volumescale dataSeries =
-  volumeGraph xscale volumescale dataSeries
-
-chart
-  :: (Scale xscale
-     ,Scale priceScale
-     ,Scale volumeScale)
-  => xscale -> priceScale -> volumeScale -> VU.Vector PriceData -> [Picture]
-chart x p v dataSeries =
-  [frame
-  ,pChart x p dataSeries
-  ,vChart x v dataSeries
-  ,horizontalCrosshair 0.5
-  ,verticalCrosshair 0.25]
+-- chart :: (Scale xscale
+--          ,Scale priceScale
+--          ,Scale volumeScale)
+--       => xscale
+--       -> priceScale
+--       -> volumeScale
+--       -> VU.Vector PriceData
+--       -> [Picture]
+-- chart x p v dataSeries =
+--   [ -- frame
+-- --    pChart x p dataSeries
+--    vChart x v dataSeries
+--   ,horizontalCrosshair 0.5
+--   ,verticalCrosshair 0.25]
 
 -- The size of the chart, in logical units. All the diagrams use the
 --  logical units. The translation from the actual units to the logical

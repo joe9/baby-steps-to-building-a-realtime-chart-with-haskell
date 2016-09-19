@@ -6,42 +6,65 @@
 {-# LANGUAGE TypeFamilies              #-}
 
 module PriceGraphOpenGL
-  (priceGraph)
+  (priceChartDrawable)
   where
 
 import           Data.Colour.Names
 import qualified Data.Vector.Unboxed  as VU
+import qualified Data.Vector.Storable as VS
 import           "gl" Graphics.GL
-import           Linear.V2
--- import qualified Data.Vector.Storable as VS
+-- import           Linear.V2
 --
 import OpenGLStuff
-import ScaleUnboxedVector
+import ScaleDataUnboxedVector
 import TypesOpenGL
+
+priceChartDrawable
+  :: VertexArrayId -> BufferId -> Drawable
+priceChartDrawable vaId bId =
+  Drawable {
+            draw = return ()
+           ,loadBufferAndBuildDrawFunction =
+            (\dataSeries scalex scaleprice _ d -> do
+                 do let vertices = priceBufferData scalex scaleprice dataSeries
+                    loadUsingBuffer (vertexArrayId d)
+                                    (bufferId d)
+                                    vertices
+                    return (glDrawArrays GL_TRIANGLE_STRIP
+                                         0
+                                         (div (fromIntegral (VS.length vertices)) 2)))
+           ,previousValue = ValueAsOf 0
+           ,currentValue = \_ -> ValueAsOf . asof . VU.last
+           ,vertexArrayId = vaId
+           ,bufferId = bId
+           ,colour = lightpink
+           ,transparency = Nothing}
 
 -- TODO dots
 --   Pictures ([areaBetweenBidAndAsk areaVertices] <> map dot scaledBids <>
 --             map dot scaledAsks)
 priceGraph
-  :: (Scale xscale
-     ,Scale yscale)
-  => xscale -> yscale -> VU.Vector PriceData -> Picture
-priceGraph xScale yScale dataSeries =
+  :: Scale -> Scale -> VU.Vector PriceData -> Picture
+priceGraph scalex scaley dataSeries =
   Picture scaledPrices GL_TRIANGLE_STRIP lightpink Nothing
   where scaledPrices =
-          (VU.convert . VU.concatMap (scaledPrice xScale yScale) . VU.indexed) dataSeries
+          (VU.convert . VU.concatMap (scaledPrice scalex scaley) . VU.indexed) dataSeries
+
+priceBufferData
+  :: Scale -> Scale -> VU.Vector PriceData -> VS.Vector Float
+priceBufferData scalex scaley =
+  VU.convert . VU.concatMap (scaledPrice scalex scaley) . VU.indexed
+
 --   where scaledPrices = (VS.concatMap v2ToVertex . VU.convert . VU.concatMap (scaledPriceOld xScale yScale) . VU.indexed) dataSeries
 -- Scale from the domain (input data range) to the range (absolute coordinate).
 scaledPrice
-  :: (Scale x
-     ,Scale y)
-  => x -> y -> (Int,PriceData) -> VU.Vector Float
-scaledPrice xScale yScale (x,d) =
+  :: Scale -> Scale -> (Int,PriceData) -> VU.Vector Float
+scaledPrice scalex scaley (x,d) =
   VU.fromList
-    [(realToFrac . toRange xScale . fromIntegral) x
-    ,(realToFrac . toRange yScale) b
-    ,(realToFrac . toRange xScale . fromIntegral) x
-    ,(realToFrac . toRange yScale) a]
+    [(realToFrac . sToRange scalex scalex . fromIntegral) x
+    ,(realToFrac . (sToRange scaley) scaley) b
+    ,(realToFrac . sToRange scalex scalex . fromIntegral) x
+    ,(realToFrac . (sToRange scaley) scaley) a]
   where b = bid d
         a = ask d
 
