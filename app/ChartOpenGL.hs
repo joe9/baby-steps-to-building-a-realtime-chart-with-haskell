@@ -9,10 +9,10 @@ import           "gl" Graphics.GL
 --
 import GLFWStuff
 import OpenGLStuff
-import PriceGraphOpenGL
 import ScaleDataUnboxedVector
 import TypesOpenGL
-import VolumeGraphOpenGL
+-- import PriceGraphOpenGL
+-- import VolumeGraphOpenGL
 
 minimumElement, maximumElement
   :: (Ord a
@@ -132,7 +132,7 @@ horizontalCrosshairDrawable vaId bId =
   Drawable {
             draw = return ()
            ,loadBufferAndBuildDrawFunction =
-            (\state dataSeries _ _ _ d -> do
+            (\state _ _ _ _ d -> do
                  do let f = fromIntegral :: Int -> Double
                         y =  ((2 * stateCursorY state) / f (stateWindowHeight state)) - 1
                         vertices = VS.fromList [-1,realToFrac y,1,realToFrac y]
@@ -155,7 +155,7 @@ verticalCrosshairDrawable vaId bId =
   Drawable {
             draw = return ()
            ,loadBufferAndBuildDrawFunction =
-            (\state dataSeries _ _ _ d -> do
+            (\state _ _ _ _ d -> do
                  do let f = fromIntegral :: Int -> Double
                         x =  ((2 * stateCursorX state) / f (stateWindowWidth state)) - 1
                         vertices = VS.fromList [realToFrac x,-1,realToFrac x,1]

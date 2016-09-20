@@ -9,7 +9,7 @@ import Control.Concurrent.STM    (TQueue, atomically, newTQueueIO, tryReadTQueue
 import           Control.Exception.Safe
 import           "gl" Graphics.GL
 import Control.Monad             (unless, when, void)
-import Control.Monad.RWS.Strict  (RWST, ask, asks, evalRWST, get, liftIO, modify, put)
+import Control.Monad.RWS.Strict  (RWST, asks, evalRWST, get, liftIO, modify, put)
 import Control.Monad.Trans.Maybe (MaybeT(..), runMaybeT)
 import Data.List                 (intercalate)
 import Data.Maybe
@@ -18,7 +18,7 @@ import System.IO
 
 import qualified Graphics.UI.GLFW          as GLFW
 
-import OpenGLStuff
+import OpenGLStuff hiding (rgb)
 import GLException
 
 --------------------------------------------------------------------------------
@@ -118,8 +118,8 @@ window onWindow renderer = do
         -- disable vsync (0 = off, 1 = on), 0 is the
         -- default value too
         -- http://www.glfw.org/docs/latest/quick.html#quick_swap_buffers
-        -- GLFW.swapInterval 1
-        GLFW.swapInterval 0
+        GLFW.swapInterval 1
+--         GLFW.swapInterval 0
 
 --         GL.position (GL.Light 0) GL.$= GL.Vertex4 5 5 10 0
 --         GL.light    (GL.Light 0) GL.$= GL.Enabled
@@ -238,18 +238,18 @@ run :: (GLFW.Window -> ColorUniformLocation -> State -> a -> IO a) -> a -> Demo 
 run drawFunction ds = do
     -- number of seconds since GLFW started
 --     previousmt <- liftIO GLFW.getTime
-    win <- asks envWindow
-    colorUniformLocation <- asks envColorUniformLocation
-    state <- get
 
     -- TODO bug: on empty event, should updated the chart with new data
-    liftIO (putStrLn "watiing for events")
     liftIO (GLFW.waitEvents)
+    liftIO (putStrLn "received GLFW event")
 --     liftIO (GLFW.pollEvents)
     processEvents
+    win <- asks envWindow
     q <- liftIO (GLFW.windowShouldClose win)
     unless q
-        (do uuds <-
+        (do state <- get
+            colorUniformLocation <- asks envColorUniformLocation
+            uuds <-
                 liftIO (do uds <- liftIO (drawFunction win colorUniformLocation state ds)
                            GLFW.swapBuffers win
                            -- not necessary, but someone recommended it

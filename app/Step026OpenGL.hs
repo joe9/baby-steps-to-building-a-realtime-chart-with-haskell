@@ -92,6 +92,7 @@ renderDrawables :: IORef (VU.Vector PriceData
                 -> [Drawable]
                 -> IO [Drawable]
 renderDrawables ref win colorUniformLocation state ds = do
+    putStrLn "renderDrawables called"
     (series,_,_,_) <- readIORef ref
     if (any (\d -> Just (currentValue d state series) /= previousValue d) ds)
       then mapM (renderDrawable ref win colorUniformLocation state) ds
