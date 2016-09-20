@@ -118,8 +118,8 @@ window onWindow renderer = do
         -- disable vsync (0 = off, 1 = on), 0 is the
         -- default value too
         -- http://www.glfw.org/docs/latest/quick.html#quick_swap_buffers
-        GLFW.swapInterval 1
---         GLFW.swapInterval 0
+--         GLFW.swapInterval 1
+        GLFW.swapInterval 0
 
 --         GL.position (GL.Light 0) GL.$= GL.Vertex4 5 5 10 0
 --         GL.light    (GL.Light 0) GL.$= GL.Enabled
@@ -240,8 +240,8 @@ run drawFunction ds = do
 --     previousmt <- liftIO GLFW.getTime
 
     -- TODO bug: on empty event, should updated the chart with new data
-    liftIO (GLFW.waitEvents)
-    liftIO (putStrLn "received GLFW event")
+    liftIO GLFW.waitEvents
+    liftIO (putStr "Received GLFW event: ")
 --     liftIO (GLFW.pollEvents)
     processEvents
     win <- asks envWindow

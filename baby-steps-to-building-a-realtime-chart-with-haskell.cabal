@@ -732,6 +732,7 @@ executable Step026OpenGL
                      , gl
                      , safe-exceptions
                      , GLFW-b
+                     , bindings-GLFW >= 3.2.1.0
                      , quine
                      , transformers
                      , colour
