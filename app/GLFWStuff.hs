@@ -367,9 +367,6 @@ processEvent ev =
       (EventMonitor _ c) ->
           printEvent "monitor" [show c]
 
-      _ ->
-          liftIO (putStrLn "unknown event")
-
 adjustWindow :: Demo ()
 adjustWindow = do
     state <- get

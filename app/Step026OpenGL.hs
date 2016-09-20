@@ -116,7 +116,7 @@ renderDrawable ref win colorUniformLocation state drawable = do
     then do
         putStrLn "renderDrawable called - loading buffer"
         -- With OpenGL, the coordinates should be in the range (-1, 1)
-        drawFunction <- (loadBufferAndBuildDrawFunction drawable) series xscale pricescale volumescale drawable
+        drawFunction <- (loadBufferAndBuildDrawFunction drawable) state series xscale pricescale volumescale drawable
         justDraw (drawable {draw = drawFunction, previousValue = Just newValue})
     else justDraw drawable
 
@@ -185,8 +185,8 @@ initializeDrawables1 continueFunction =
                                             ,frameDrawable fvaid fvabid
                                             ,priceChartDrawable pvaid pvabid
                                             ,volumeChartDrawable vvaid vvabid
---                                             ,horizontalCrosshairDrawable hcvaid hcvabid
---                                             ,verticalCrosshairDrawable vcvaid vcvabid
+                                            ,horizontalCrosshairDrawable hcvaid hcvabid
+                                            ,verticalCrosshairDrawable vcvaid vcvabid
                                             ]
 
 screenDrawable
@@ -199,37 +199,7 @@ screenDrawable vaId bId =
             draw = drawFunction
            ,previousValue = Nothing
            ,currentValue = \_ _ -> ValueInt 0
-           ,loadBufferAndBuildDrawFunction = (\_ _ _ _ _ -> return drawFunction)
-           ,vertexArrayId = vaId
-           ,bufferId = bId
-           ,colour = red
-           ,transparency = Nothing}
-
-horizontalCrosshairDrawable
-  :: VertexArrayId -> BufferId -> Drawable
-horizontalCrosshairDrawable vaId bId =
-  Drawable {
-            draw =
-              do glClearColor 0.05 0.05 0.05 1
-                 glClear (GL_COLOR_BUFFER_BIT .|. GL_DEPTH_BUFFER_BIT)
-           ,loadBufferAndBuildDrawFunction = (\_ _ _ _ _ -> return (return ()))
-           ,previousValue = Nothing
-           ,currentValue = (\s _ -> (ValueCursorPosition (stateCursorX s) (stateCursorY s)))
-           ,vertexArrayId = vaId
-           ,bufferId = bId
-           ,colour = red
-           ,transparency = Nothing}
-
-verticalCrosshairDrawable
-  :: VertexArrayId -> BufferId -> Drawable
-verticalCrosshairDrawable vaId bId =
-  Drawable {
-            draw =
-              do glClearColor 0.05 0.05 0.05 1
-                 glClear (GL_COLOR_BUFFER_BIT .|. GL_DEPTH_BUFFER_BIT)
-           ,loadBufferAndBuildDrawFunction = (\_ _ _ _ _ -> return (return ()))
-           ,previousValue = Nothing
-           ,currentValue = \s _ -> (ValueCursorPosition (stateCursorX s) (stateCursorY s))
+           ,loadBufferAndBuildDrawFunction = (\_ _ _ _ _ _ -> return drawFunction)
            ,vertexArrayId = vaId
            ,bufferId = bId
            ,colour = red

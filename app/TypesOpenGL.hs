@@ -55,7 +55,7 @@ data Value
 data Drawable =
   Drawable {previousValue :: Maybe Value
            ,currentValue :: State -> VU.Vector PriceData -> Value
-           ,loadBufferAndBuildDrawFunction :: VU.Vector PriceData -> Scale -> Scale -> Scale -> Drawable -> IO (IO ())
+           ,loadBufferAndBuildDrawFunction :: State -> VU.Vector PriceData -> Scale -> Scale -> Scale -> Drawable -> IO (IO ())
            ,draw :: IO ()
            ,vertexArrayId :: VertexArrayId
            ,bufferId :: BufferId

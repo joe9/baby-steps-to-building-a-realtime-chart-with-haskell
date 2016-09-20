@@ -76,7 +76,7 @@ volumeChartDrawable vaId bId =
   Drawable {
             draw = return ()
            ,loadBufferAndBuildDrawFunction =
-            (\dataSeries scalex scaleprice _ d -> do
+            (\_ dataSeries scalex scaleprice _ d -> do
                  do let vertices = volumeBufferData scalex scaleprice dataSeries
                     loadUsingBuffer (vertexArrayId d)
                                     (bufferId d)
