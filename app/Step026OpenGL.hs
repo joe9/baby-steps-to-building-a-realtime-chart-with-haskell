@@ -159,19 +159,6 @@ initializeDrawables continueFunction =
   withVertexArray $
   \svaid svabid ->
     do withVertexArray $
-         \fvaid fvabid -> do continueFunction
-                                            [screenDrawable svaid svabid
-                                            ,frameDrawable fvaid fvabid
-                                            ]
-
--- could use the ContT monad. but, this is more readable
---  https://github.com/glguy/irc-core/blob/v2/src/Client/CApi.hs#L146-L158
-initializeDrawables1
-  :: ([Drawable] -> IO b) -> IO b
-initializeDrawables1 continueFunction =
-  withVertexArray $
-  \svaid svabid ->
-    do withVertexArray $
          \fvaid fvabid ->
            do withVertexArray $
                 \pvaid pvabid ->
