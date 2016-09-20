@@ -59,6 +59,8 @@ data Event =
   | EventScroll          !GLFW.Window !Double !Double
   | EventKey             !GLFW.Window !GLFW.Key !Int !GLFW.KeyState !GLFW.ModifierKeys
   | EventChar            !GLFW.Window !Char
+  | EventCharMods        !GLFW.Window !Char !Int
+  | EventMonitor         !GLFW.Monitor !GLFW.MonitorState
   deriving Show
 
 --------------------------------------------------------------------------------
@@ -109,6 +111,9 @@ window onWindow renderer = do
         GLFW.setScrollCallback          win $ Just $ scrollCallback          eventsChan
         GLFW.setKeyCallback             win $ Just $ keyCallback             eventsChan
         GLFW.setCharCallback            win $ Just $ charCallback            eventsChan
+--         GLFW.setCharModsCallback        win $ Just $ charModsCallback        eventsChan
+--         GLFW.setDropCallback            win $ Just $ dropCallback            eventsChan
+        GLFW.setMonitorCallback             $ Just $ monitorCallback         eventsChan
 
         -- disable vsync (0 = off, 1 = on), 0 is the
         -- default value too
@@ -130,9 +135,9 @@ window onWindow renderer = do
         revision <- GLFW.getWindowContextVersionRevision win
         putStrLn ("OpenGL version recieved: " ++ show major ++ "," ++ show minor ++ "," ++ show revision);
         version <- GLFW.getVersion
-        putStrLn ("Supported OpenGL Version is: " ++ show version);
+        putStrLn ("Supported GLFW Version is: " ++ show version);
         versionString <- GLFW.getVersionString
-        putStrLn ("Supported OpenGL Version String is: " ++ show versionString);
+        putStrLn ("Supported GLFW Version String is: " ++ show versionString);
 --         putStrLn ("Supported GLSL is %s\n", (const char*)glGetString(GL_SHADING_LANGUAGE_VERSION));
 
         let env = Env
@@ -199,6 +204,9 @@ cursorEnterCallback     :: TQueue Event -> GLFW.Window -> GLFW.CursorState      
 scrollCallback          :: TQueue Event -> GLFW.Window -> Double -> Double                                                 -> IO ()
 keyCallback             :: TQueue Event -> GLFW.Window -> GLFW.Key -> Int -> GLFW.KeyState -> GLFW.ModifierKeys            -> IO ()
 charCallback            :: TQueue Event -> GLFW.Window -> Char                                                             -> IO ()
+charModsCallback        :: TQueue Event -> GLFW.Window -> Char -> Int                                                          -> IO ()
+-- dropCallback            :: TQueue Event -> GLFW.Window -> Char -> Int ->                                                      -> IO ()
+monitorCallback         :: TQueue Event -> GLFW.Monitor -> GLFW.MonitorState                                               -> IO ()
 
 -- TODO change this to throw an exception
 errorCallback           tc e s            = atomically $ writeTQueue tc $ EventError           e s
@@ -215,6 +223,9 @@ cursorEnterCallback     tc win ca         = atomically $ writeTQueue tc $ EventC
 scrollCallback          tc win x y        = atomically $ writeTQueue tc $ EventScroll          win x y
 keyCallback             tc win k sc ka mk = atomically $ writeTQueue tc $ EventKey             win k sc ka mk
 charCallback            tc win c          = atomically $ writeTQueue tc $ EventChar            win c
+charModsCallback        tc win c sc       = atomically $ writeTQueue tc $ EventCharMods        win c sc
+-- dropCallback
+monitorCallback         tc mon c          = atomically $ writeTQueue tc $ EventMonitor         mon c
 
 --------------------------------------------------------------------------------
 
@@ -232,7 +243,9 @@ run drawFunction ds = do
     state <- get
 
     -- TODO bug: on empty event, should updated the chart with new data
-    liftIO (GLFW.waitEvents)
+    liftIO (putStrLn "watiing for events")
+--     liftIO (GLFW.waitEvents)
+    liftIO (GLFW.pollEvents)
     processEvents
     q <- liftIO (GLFW.windowShouldClose win)
     unless q
@@ -347,6 +360,15 @@ processEvent ev =
 
       (EventChar _ c) ->
           printEvent "char" [show c]
+
+      (EventCharMods _ c _) ->
+          printEvent "char mods" [show c]
+
+      (EventMonitor _ c) ->
+          printEvent "monitor" [show c]
+
+      _ ->
+          liftIO (putStrLn "unknown event")
 
 adjustWindow :: Demo ()
 adjustWindow = do

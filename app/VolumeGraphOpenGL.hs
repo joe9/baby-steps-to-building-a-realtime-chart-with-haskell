@@ -84,7 +84,7 @@ volumeChartDrawable vaId bId =
                     return (glDrawArrays GL_TRIANGLE_STRIP
                                          0
                                          (div (fromIntegral (VS.length vertices)) 2)))
-           ,previousValue = ValueAsOf 0
+           ,previousValue = Nothing
            ,currentValue = \_ -> ValueAsOf . asof . VU.last
            ,vertexArrayId = vaId
            ,bufferId = bId

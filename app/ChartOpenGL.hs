@@ -60,7 +60,7 @@ frameDrawable
   :: VertexArrayId -> BufferId -> Drawable
 frameDrawable vaId bId =
   Drawable {draw = return ()
-           ,previousValue = ValueCursorPosition 0 0
+           ,previousValue = Nothing
            ,currentValue =
               (\s _ ->
                  ValueCursorPosition (stateCursorX s)

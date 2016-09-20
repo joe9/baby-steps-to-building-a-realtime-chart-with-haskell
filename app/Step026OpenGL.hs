@@ -91,10 +91,11 @@ renderDrawables :: IORef (VU.Vector PriceData
                 -> State
                 -> [Drawable]
                 -> IO [Drawable]
-renderDrawables ref win colorUniformLocation state =
-     -- then draw the diagram
-     -- With OpenGL, the coordinates should be in the range (-1, 1)
-    mapM (renderDrawable ref win colorUniformLocation state)
+renderDrawables ref win colorUniformLocation state ds = do
+    (series,_,_,_) <- readIORef ref
+    if (any (\d -> Just (currentValue d state series) /= previousValue d) ds)
+      then mapM (renderDrawable ref win colorUniformLocation state) ds
+      else return ds
 
 renderDrawable :: IORef (VU.Vector PriceData
                          ,Scale
@@ -110,11 +111,13 @@ renderDrawable ref win colorUniformLocation state drawable = do
                      drawWith win colorUniformLocation (vertexArrayId d) (bufferId d) (colour d) (transparency d) (draw d)
                      return d)
   (series,xscale,pricescale,volumescale) <- readIORef ref
-  if (currentValue drawable state series /= previousValue drawable)
+  let newValue = currentValue drawable state series
+  if (Just newValue /= previousValue drawable)
     then do
+        putStrLn "renderDrawable called - loading buffer"
         -- With OpenGL, the coordinates should be in the range (-1, 1)
         drawFunction <- (loadBufferAndBuildDrawFunction drawable) series xscale pricescale volumescale drawable
-        justDraw (drawable {draw = drawFunction})
+        justDraw (drawable {draw = drawFunction, previousValue = Just newValue})
     else justDraw drawable
 
 -- http://stackoverflow.com/questions/5293898/how-to-pass-state-between-event-handlers-in-gtk2hs
@@ -127,7 +130,7 @@ updatedData ref oldData =
   do newSeries <- addAnother oldData
      atomicModifyIORef' ref
                         (\_ -> (newSeries,()))
-     GLFW.postEmptyEvent
+--      GLFW.postEmptyEvent
      threadDelay (1 * 1000 * 1000)
      updatedData ref newSeries
 
@@ -182,8 +185,9 @@ initializeDrawables1 continueFunction =
                                             ,frameDrawable fvaid fvabid
                                             ,priceChartDrawable pvaid pvabid
                                             ,volumeChartDrawable vvaid vvabid
-                                            ,horizontalCrosshairDrawable hcvaid hcvabid
-                                            ,verticalCrosshairDrawable vcvaid vcvabid]
+--                                             ,horizontalCrosshairDrawable hcvaid hcvabid
+--                                             ,verticalCrosshairDrawable vcvaid vcvabid
+                                            ]
 
 screenDrawable
   :: VertexArrayId -> BufferId -> Drawable
@@ -193,8 +197,8 @@ screenDrawable vaId bId =
                  glClear (GL_COLOR_BUFFER_BIT .|. GL_DEPTH_BUFFER_BIT)
   in Drawable {
             draw = drawFunction
-           ,previousValue = ValueInt 0
-           ,currentValue = \_ _ -> (ValueInt 0)
+           ,previousValue = Nothing
+           ,currentValue = \_ _ -> ValueInt 0
            ,loadBufferAndBuildDrawFunction = (\_ _ _ _ _ -> return drawFunction)
            ,vertexArrayId = vaId
            ,bufferId = bId
@@ -209,7 +213,7 @@ horizontalCrosshairDrawable vaId bId =
               do glClearColor 0.05 0.05 0.05 1
                  glClear (GL_COLOR_BUFFER_BIT .|. GL_DEPTH_BUFFER_BIT)
            ,loadBufferAndBuildDrawFunction = (\_ _ _ _ _ -> return (return ()))
-           ,previousValue = ValueCursorPosition 0 0
+           ,previousValue = Nothing
            ,currentValue = (\s _ -> (ValueCursorPosition (stateCursorX s) (stateCursorY s)))
            ,vertexArrayId = vaId
            ,bufferId = bId
@@ -224,8 +228,8 @@ verticalCrosshairDrawable vaId bId =
               do glClearColor 0.05 0.05 0.05 1
                  glClear (GL_COLOR_BUFFER_BIT .|. GL_DEPTH_BUFFER_BIT)
            ,loadBufferAndBuildDrawFunction = (\_ _ _ _ _ -> return (return ()))
-           ,previousValue = ValueCursorPosition 0 0
-           ,currentValue = (\s _ -> (ValueCursorPosition (stateCursorX s) (stateCursorY s)))
+           ,previousValue = Nothing
+           ,currentValue = \s _ -> (ValueCursorPosition (stateCursorX s) (stateCursorY s))
            ,vertexArrayId = vaId
            ,bufferId = bId
            ,colour = red

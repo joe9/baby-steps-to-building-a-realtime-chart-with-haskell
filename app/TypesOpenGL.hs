@@ -53,7 +53,7 @@ data Value
   deriving (Eq)
 
 data Drawable =
-  Drawable {previousValue :: Value
+  Drawable {previousValue :: Maybe Value
            ,currentValue :: State -> VU.Vector PriceData -> Value
            ,loadBufferAndBuildDrawFunction :: VU.Vector PriceData -> Scale -> Scale -> Scale -> Drawable -> IO (IO ())
            ,draw :: IO ()
