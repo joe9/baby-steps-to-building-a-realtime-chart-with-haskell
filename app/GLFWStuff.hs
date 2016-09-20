@@ -244,8 +244,8 @@ run drawFunction ds = do
 
     -- TODO bug: on empty event, should updated the chart with new data
     liftIO (putStrLn "watiing for events")
---     liftIO (GLFW.waitEvents)
-    liftIO (GLFW.pollEvents)
+    liftIO (GLFW.waitEvents)
+--     liftIO (GLFW.pollEvents)
     processEvents
     q <- liftIO (GLFW.windowShouldClose win)
     unless q
