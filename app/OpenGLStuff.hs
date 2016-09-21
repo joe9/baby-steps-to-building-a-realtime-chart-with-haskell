@@ -68,8 +68,7 @@ rgb =
           (doubleToGLfloat r, doubleToGLfloat g, doubleToGLfloat b)) .
     toSRGB
 
-colorUniformLocationInProgram
-    :: ProgramId -> IO ColorUniformLocation
+colorUniformLocationInProgram :: ProgramId -> IO ColorUniformLocation
 colorUniformLocationInProgram programId =
     withCString "color" (checkGLErrors . glGetUniformLocation programId)
 
@@ -103,8 +102,8 @@ drawUsingVertexArray _ colorUniformLocation vertexArrayId color maybet f = do
     loadColor colorUniformLocation r g b (doubleToGLfloat (fromMaybe 1 maybet))
     putStrLn ("drawing buffer: vertex array id: " ++ show vertexArrayId)
     usingVertexArray vertexArrayId f
---     usingVertexArray vertexArrayId (glDrawArrays GL_LINES 0 2)
 
+--     usingVertexArray vertexArrayId (glDrawArrays GL_LINES 0 2)
 --      writeFile "/tmp/temp-haskell-data" (show v2s)
 --   putStrLn ("size of float is: " ++ show ((sizeOf (undefined :: GLfloat))))
 --   putStrLn ("loading number of elements: " ++ show ((sizeOf (undefined :: GLfloat) * V.length bufferData)))
@@ -125,26 +124,25 @@ usingVertexArray vertexArrayId f =
 
 -- glBufferData deletes the pre-existing data store and creates a new
 --   data store
-loadBuffer :: BufferId -> VS.Vector GLfloat -> IO ()
+loadBuffer
+    :: BufferId -> VS.Vector GLfloat -> IO ()
 loadBuffer bufferId bufferData =
     let size =
             fromIntegral (sizeOf (undefined :: GLfloat) * VS.length bufferData)
     in do checkGLErrors (glBindBuffer GL_ARRAY_BUFFER bufferId)
-          putStrLn
-                ("loading buffer: vertex array id: " ++
-                show bufferId)
+          putStrLn ("loading buffer: vertex array id: " ++ show bufferId)
           VS.unsafeWith
-               bufferData
-               (\ptr ->
-                     checkGLErrors
-                         (glBufferData
-                              GL_ARRAY_BUFFER
-                              size
-                              (castPtr ptr)
-                              GL_STREAM_DRAW))
+              bufferData
+              (\ptr ->
+                    checkGLErrors
+                        (glBufferData
+                             GL_ARRAY_BUFFER
+                             size
+                             (castPtr ptr)
+                             GL_STREAM_DRAW))
           putStrLn ("loadBuffer completed" ++ show bufferData)
 
--- -- basic draw function without using the picture
+-- basic function for debugging
 justDrawThis
     :: Window
     -> ColorUniformLocation
@@ -155,10 +153,10 @@ justDrawThis
     -> GLfloat
     -> GLfloat
     -> GLfloat
-    -> GLuint
-    -> GLuint
+    -> GLuint -- vertex array id
+    -> GLuint -- buffer id
     -> IO ()
-justDrawThis window colorUniformLocation vertices noOfElementsToDraw drawType r g b t vertexArrayId bufferId = do
+justDrawThis window colorUniformLocation vertices noOfElementsToDraw drawType r g b t _ bufferId = do
     glClearColor 0.05 0.05 0.05 1
     glClear (GL_COLOR_BUFFER_BIT .|. GL_DEPTH_BUFFER_BIT)
     loadColor colorUniformLocation r g b t
@@ -172,18 +170,18 @@ justDrawThis window colorUniformLocation vertices noOfElementsToDraw drawType r 
          show (sizeOf (undefined :: GLfloat) * VS.length vertices))
     putStrLn ("justDrawThis: loading elements: " ++ show vertices)
     loadBuffer bufferId vertices
---     checkGLErrors (glBindVertexArray vertexArrayId)
---     let size =
---             fromIntegral (sizeOf (undefined :: GLfloat) * VS.length vertices)
---     VS.unsafeWith
---         vertices
---         (\ptr ->
---               checkGLErrors
---                   (glBufferData
---                        GL_ARRAY_BUFFER
---                        size
---                        (castPtr ptr)
---                        GL_STREAM_DRAW))
+    --     checkGLErrors (glBindVertexArray vertexArrayId)
+    --     let size =
+    --             fromIntegral (sizeOf (undefined :: GLfloat) * VS.length vertices)
+    --     VS.unsafeWith
+    --         vertices
+    --         (\ptr ->
+    --               checkGLErrors
+    --                   (glBufferData
+    --                        GL_ARRAY_BUFFER
+    --                        size
+    --                        (castPtr ptr)
+    --                        GL_STREAM_DRAW))
     putStrLn
         ("justDrawThis: draw this many vertices: " ++
          show (div (fromIntegral (VS.length vertices)) 2 :: Int))
@@ -191,8 +189,9 @@ justDrawThis window colorUniformLocation vertices noOfElementsToDraw drawType r 
         ("justDrawThis: draw this many vertices: " ++
          show (fromIntegral (div (VS.length vertices) 2) :: Int))
     glDrawArrays drawType 0 (fromIntegral noOfElementsToDraw)
---     glDrawArrays GL_TRIANGLE_STRIP 0 4
-    GLFW.swapBuffers window
+    --     glDrawArrays GL_TRIANGLE_STRIP 0 4
+    GLFW.swapBuffers
+        window
     glFlush  -- not necessary, but someone recommended it
     checkGLErrors (glFlush)
 
@@ -232,21 +231,15 @@ withVertexBuffer f =
     \bufferId -> do
         -- hardcoding bindingindex to 0
         --  checkGLErrors $ glVertexAttribPointer 0 2 GL_FLOAT GL_FALSE 0 nullPtr
-        finally
-            (do checkGLErrors
-                    (glBindVertexBuffer
-                         0
-                         bufferId
-                         0
-                         (fromIntegral (2 * sizeOf (undefined :: GLfloat))))
-                checkGLErrors (glVertexAttribFormat 0 2 GL_FLOAT GL_FALSE 0)
-                checkGLErrors (glVertexAttribBinding 0 0)
-                withVertexAttribArray 0 (f bufferId))
+        checkGLErrors
             (glBindVertexBuffer
                  0
-                 0
+                 bufferId
                  0
                  (fromIntegral (2 * sizeOf (undefined :: GLfloat))))
+        checkGLErrors (glVertexAttribFormat 0 2 GL_FLOAT GL_FALSE 0)
+        checkGLErrors (glVertexAttribBinding 0 0)
+        withVertexAttribArray 0 (f bufferId)
 
 --   https://www.opengl.org/wiki/BufferObject
 -- bufferObjectType : mostly GL_ARRAY_BUFFER
@@ -337,11 +330,12 @@ withProgram f =
              -- I like writing the vertices is clockwise order
              -- https://www.opengl.org/wiki/Face_Culling
              -- TODO uncomment the below culling code
---              glFrontFace
---                  GL_CW
---              glCullFace GL_BACK
---              glEnable GL_CULL_FACE
-             f programId)
+             --              glFrontFace
+             --                  GL_CW
+             --              glCullFace GL_BACK
+             --              glEnable GL_CULL_FACE
+             f
+                 programId)
 
 -- the infoLogLength includes the size of the null termination character
 -- do not bother printing the infoLog if it just has the null
