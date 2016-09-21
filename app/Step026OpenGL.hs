@@ -196,12 +196,12 @@ initializeDrawables continueFunction =
                                                     , frameDrawable
                                                           fvaid
                                                           fvabid
-                                                    , priceChartDrawable
-                                                          pvaid
-                                                          pvabid
-                                                    , volumeChartDrawable
-                                                          vvaid
-                                                          vvabid
+--                                                     , priceChartDrawable
+--                                                           pvaid
+--                                                           pvabid
+--                                                     , volumeChartDrawable
+--                                                           vvaid
+--                                                           vvabid
                                                     , horizontalCrosshairDrawable
                                                           hcvaid
                                                           hcvabid

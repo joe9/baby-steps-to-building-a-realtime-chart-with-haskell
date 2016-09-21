@@ -38,7 +38,7 @@ data State = State
     , stateDragStartY      :: !Double
     , stateCursorX         :: !Double
     , stateCursorY         :: !Double
-    }
+    } deriving Show
 
 type Demo = RWST Env () State IO
 
@@ -152,8 +152,8 @@ window onWindow renderer = do
               , stateDragging        = False
               , stateDragStartX      = 0
               , stateDragStartY      = 0
-              , stateCursorX         = 0
-              , stateCursorY         = 0
+              , stateCursorX         = -1
+              , stateCursorY         = -1
               }
         onWindow (runDemo renderer env state)
         return ()
