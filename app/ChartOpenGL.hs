@@ -181,8 +181,7 @@ buildVerticalCrosshair state _ _ _ _ d
   | 0 > stateCursorX state || 0 == stateWindowWidth state = return (return ())
   | otherwise = do
       let f = fromIntegral :: Int -> Double
-          nx = fromIntegral (stateWindowWidth state) - stateCursorX state
-          x = ((2 * nx) / f (stateWindowWidth state)) - 1
+          x = ((2 * stateCursorX state) / f (stateWindowWidth state)) - 1
           vertices = VS.fromList [realToFrac x, -1, realToFrac x, 1]
       loadBuffer (dBufferId d) vertices
       return

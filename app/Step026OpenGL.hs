@@ -196,9 +196,9 @@ initializeDrawables continueFunction =
                                                     , frameDrawable
                                                           fvaid
                                                           fvabid
---                                                     , priceChartDrawable
---                                                           pvaid
---                                                           pvabid
+                                                    , priceChartDrawable
+                                                          pvaid
+                                                          pvabid
 --                                                     , volumeChartDrawable
 --                                                           vvaid
 --                                                           vvabid
