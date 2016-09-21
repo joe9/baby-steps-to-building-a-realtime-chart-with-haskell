@@ -70,8 +70,7 @@ frameDrawable vaId bId =
                  do let vertices =
                           VS.fromList
                             [-0.99,-0.99,-0.99,0.99,0.99,0.99,0.99,-0.99]
-                    loadUsingBuffer (dVertexArrayId d)
-                                    (dBufferId d)
+                    loadBuffer (dBufferId d)
                                     vertices
                     putStrLn ("frame vertices are: " ++ show vertices)
                     return (glDrawArrays GL_LINE_LOOP
@@ -138,8 +137,7 @@ horizontalCrosshairDrawable vaId bId =
                  do let f = fromIntegral :: Int -> Double
                         y =  ((2 * stateCursorY state) / f (stateWindowHeight state)) - 1
                         vertices = VS.fromList [-1,realToFrac y,1,realToFrac y]
-                    loadUsingBuffer (dVertexArrayId d)
-                                    (dBufferId d)
+                    loadBuffer (dBufferId d)
                                     vertices
                     return (glDrawArrays GL_LINES
                                          0
@@ -161,8 +159,7 @@ verticalCrosshairDrawable vaId bId =
                  do let f = fromIntegral :: Int -> Double
                         x =  ((2 * stateCursorX state) / f (stateWindowWidth state)) - 1
                         vertices = VS.fromList [realToFrac x,-1,realToFrac x,1]
-                    loadUsingBuffer (dVertexArrayId d)
-                                    (dBufferId d)
+                    loadBuffer (dBufferId d)
                                     vertices
                     return (glDrawArrays GL_TRIANGLE_STRIP
                                          0

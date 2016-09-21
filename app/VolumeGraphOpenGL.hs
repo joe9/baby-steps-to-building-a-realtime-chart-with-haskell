@@ -78,9 +78,7 @@ volumeChartDrawable vaId bId =
            ,dLoadBufferAndBuildDrawFunction =
             (\_ dataSeries scalex scaleprice _ d -> do
                  do let vertices = volumeBufferData scalex scaleprice dataSeries
-                    loadUsingBuffer (dVertexArrayId d)
-                                    (dBufferId d)
-                                    vertices
+                    loadBuffer (dBufferId d) vertices
                     return (glDrawArrays GL_TRIANGLE_STRIP
                                          0
                                          (div (fromIntegral (VS.length vertices)) 2)))

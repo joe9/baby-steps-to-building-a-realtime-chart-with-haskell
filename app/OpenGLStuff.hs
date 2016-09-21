@@ -68,32 +68,6 @@ rgb =
           (doubleToGLfloat r, doubleToGLfloat g, doubleToGLfloat b)) .
     toSRGB
 
--- the timing here is rudimentary
--- the proper way to time the gpu is
--- https://github.com/ekmett/vr/blob/master/timer.h
---      previousmt <- GLFW.getTime
---      mt <- GLFW.getTime
---      putStrLn ("time taken to draw: " ++
---                         show (1000 * (fromMaybe 0 mt - fromMaybe 0 previousmt)) ++
---                         " milliseconds")
-drawUsingBuffer
-    :: Window
-    -> ColorUniformLocation
-    -> VertexArrayId
-    -> BufferId
-    -> Colour Double
-    -> Maybe Double
-    -> (IO ())
-    -> IO ()
-drawUsingBuffer _ colorUniformLocation vertexArrayId bufferId color maybet f = do
-    let (r,g,b) = rgb color
-    loadColor colorUniformLocation r g b (doubleToGLfloat (fromMaybe 1 maybet))
-    putStrLn
-        ("loading buffer: vertex array id: " ++
-         show vertexArrayId ++ ", buffer id: " ++ show bufferId)
-    usingBuffer vertexArrayId bufferId f
-
---      writeFile "/tmp/temp-haskell-data" (show v2s)
 colorUniformLocationInProgram
     :: ProgramId -> IO ColorUniformLocation
 colorUniformLocationInProgram programId =
@@ -108,6 +82,30 @@ loadColor :: ColorUniformLocation
 loadColor colorUniformLocation r g b t =
     checkGLErrors (glUniform4f colorUniformLocation r g b t)
 
+-- the timing here is rudimentary
+-- the proper way to time the gpu is
+-- https://github.com/ekmett/vr/blob/master/timer.h
+--      previousmt <- GLFW.getTime
+--      mt <- GLFW.getTime
+--      putStrLn ("time taken to draw: " ++
+--                         show (1000 * (fromMaybe 0 mt - fromMaybe 0 previousmt)) ++
+--                         " milliseconds")
+drawUsingVertexArray
+    :: Window
+    -> ColorUniformLocation
+    -> VertexArrayId
+    -> Colour Double
+    -> Maybe Double
+    -> (IO ())
+    -> IO ()
+drawUsingVertexArray _ colorUniformLocation vertexArrayId color maybet f = do
+    let (r,g,b) = rgb color
+    loadColor colorUniformLocation r g b (doubleToGLfloat (fromMaybe 1 maybet))
+    putStrLn ("drawing buffer: vertex array id: " ++ show vertexArrayId)
+    usingVertexArray vertexArrayId f
+--     usingVertexArray vertexArrayId (glDrawArrays GL_LINES 0 2)
+
+--      writeFile "/tmp/temp-haskell-data" (show v2s)
 --   putStrLn ("size of float is: " ++ show ((sizeOf (undefined :: GLfloat))))
 --   putStrLn ("loading number of elements: " ++ show ((sizeOf (undefined :: GLfloat) * V.length bufferData)))
 --   putStrLn ("loading elements: " ++ show bufferData)
@@ -117,26 +115,25 @@ loadColor colorUniformLocation r g b t =
 --   desktop, fonts.. etc every time you wish to change them, you do
 --   that once and save it under a profile name. Then you just switch
 --   the profile.
-loadUsingBuffer
-    :: VertexArrayId -> BufferId -> VS.Vector GLfloat -> IO ()
-loadUsingBuffer vertexArrayId bufferId bufferData =
-    putStrLn
-        ("loading buffer: vertex array id: " ++
-         show vertexArrayId ++ ", buffer id: " ++ show bufferId) >>
-    usingBuffer vertexArrayId bufferId (loadBuffer bufferData)
+-- but a VAO does not store the current GL_ARRAY_BUFFER
+--   binding. Hence, we need the glBindBuffer before glBufferData
+-- http://stackoverflow.com/a/21652930
+usingVertexArray
+    :: VertexArrayId -> (IO ()) -> IO ()
+usingVertexArray vertexArrayId f =
+    checkGLErrors (glBindVertexArray vertexArrayId) >> f
 
 -- glBufferData deletes the pre-existing data store and creates a new
 --   data store
-usingBuffer
-    :: VertexArrayId -> BufferId -> (IO ()) -> IO ()
-usingBuffer vertexArrayId _ f =
-    checkGLErrors (glBindVertexArray vertexArrayId) >> checkGLErrors f
-
-loadBuffer :: VS.Vector GLfloat -> IO ()
-loadBuffer bufferData =
+loadBuffer :: BufferId -> VS.Vector GLfloat -> IO ()
+loadBuffer bufferId bufferData =
     let size =
             fromIntegral (sizeOf (undefined :: GLfloat) * VS.length bufferData)
-    in do (VS.unsafeWith
+    in do checkGLErrors (glBindBuffer GL_ARRAY_BUFFER bufferId)
+          putStrLn
+                ("loading buffer: vertex array id: " ++
+                show bufferId)
+          VS.unsafeWith
                bufferData
                (\ptr ->
                      checkGLErrors
@@ -144,7 +141,7 @@ loadBuffer bufferData =
                               GL_ARRAY_BUFFER
                               size
                               (castPtr ptr)
-                              GL_STREAM_DRAW)))
+                              GL_STREAM_DRAW))
           putStrLn ("loadBuffer completed" ++ show bufferData)
 
 -- -- basic draw function without using the picture
@@ -174,26 +171,25 @@ justDrawThis window colorUniformLocation vertices noOfElementsToDraw drawType r 
         ("justDrawThis: loading number of bytes: " ++
          show (sizeOf (undefined :: GLfloat) * VS.length vertices))
     putStrLn ("justDrawThis: loading elements: " ++ show vertices)
-    checkGLErrors (glBindVertexArray vertexArrayId)
---     checkGLErrors (glBindBuffer GL_ARRAY_BUFFER bufferId)
---     checkGLErrors (glEnableVertexAttribArray 0)
-    let size =
-            fromIntegral (sizeOf (undefined :: GLfloat) * VS.length vertices)
-    VS.unsafeWith
-        vertices
-        (\ptr ->
-              checkGLErrors
-                  (glBufferData
-                       GL_ARRAY_BUFFER
-                       size
-                       (castPtr ptr)
-                       GL_STREAM_DRAW))
+    loadBuffer bufferId vertices
+--     checkGLErrors (glBindVertexArray vertexArrayId)
+--     let size =
+--             fromIntegral (sizeOf (undefined :: GLfloat) * VS.length vertices)
+--     VS.unsafeWith
+--         vertices
+--         (\ptr ->
+--               checkGLErrors
+--                   (glBufferData
+--                        GL_ARRAY_BUFFER
+--                        size
+--                        (castPtr ptr)
+--                        GL_STREAM_DRAW))
     putStrLn
         ("justDrawThis: draw this many vertices: " ++
-         show (div (fromIntegral (VS.length vertices)) 2))
+         show (div (fromIntegral (VS.length vertices)) 2 :: Int))
     putStrLn
         ("justDrawThis: draw this many vertices: " ++
-         show (fromIntegral (div (VS.length vertices) 2)))
+         show (fromIntegral (div (VS.length vertices) 2) :: Int))
     glDrawArrays drawType 0 (fromIntegral noOfElementsToDraw)
 --     glDrawArrays GL_TRIANGLE_STRIP 0 4
     GLFW.swapBuffers window

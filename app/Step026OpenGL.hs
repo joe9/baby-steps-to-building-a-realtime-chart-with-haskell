@@ -31,15 +31,6 @@ import OpenGLStuff
 import ScaleDataUnboxedVector
 import TypesOpenGL
 
--- | Geometry data is a list of four 2D vertices.
-vertexBufferData
-    :: VS.Vector GLfloat
-vertexBufferData = VS.fromList [-1, -1, 1, -1, -1, 1, 1, 1]
-
-vertices :: VS.Vector GLfloat
--- vertices = VS.fromList [-0.6,-0.4,0.6,-0.4,0,0.6]
-vertices = VS.fromList [-0.9, -0.9, -0.9, 0.9, 0.9, 0.9, 0.9, -0.9]
-
 -- fonts can be added using freetype2 or FontyFruity. edwardk
 -- recommends using Valve approach of rendering it with a signed
 -- distance field
@@ -72,22 +63,23 @@ main = do
     --         async
     --             (threadDelay (1 * 1000 * 1000) >>
     --              updatedData ref (dataSeries, xscale, pricescale, volumescale))
-    --     withGLFW (window onWindow (renderDrawables ref))
-    withGLFW
-        (window debugUsingSingleBuffer debugRenderer)
+    withGLFW (window debugUsingSingleBuffer debugRenderer)
+--     withGLFW (window onWindow (renderDrawables ref))
 
 --     cancel a
 debugUsingSingleBuffer
-    :: ((VertexArrayId, BufferId) -> IO a) -> IO a
-debugUsingSingleBuffer f = withVertexArray (\vaId bId -> do f (vaId, bId))
+    :: ((VertexArrayId,VertexArrayId,VertexArrayId) -> IO a) -> IO a
+-- debugUsingSingleBuffer f = withVertexArray (\vaId -> do f vaId)
+debugUsingSingleBuffer f =
+  withVertexArray $ \fvaid -> withVertexArray $ \svaid -> withVertexArray $ \_ -> withVertexArray $ \_ -> withVertexArray $ \_ -> withVertexArray $ \vaId -> f (fvaid,svaid,vaId)
 
 debugRenderer
     :: Window
     -> ColorUniformLocation
     -> State
-    -> (VertexArrayId, BufferId)
-    -> IO (VertexArrayId, BufferId)
-debugRenderer win colorUniformLocation state (vaId,bId) = do
+    -> (VertexArrayId, VertexArrayId, VertexArrayId)
+    -> IO (VertexArrayId, VertexArrayId, VertexArrayId)
+debugRenderer win colorUniformLocation state (fvaid,svaid,lvaid) = do
     let vertices = (VS.fromList [-1, (0 :: GLfloat)
                      ,-0.5, 1
                      ,0, 0
@@ -99,8 +91,7 @@ debugRenderer win colorUniformLocation state (vaId,bId) = do
                      , 0.5, 0
                      , 1, -1
                      , 0, -1])
-    putStrLn ("Vertex Array Id: " ++ show vaId)
-    putStrLn ("Buffer Id: " ++ show bId)
+    putStrLn ("Vertex Array Id: " ++ show svaid)
     justDrawThis
         win
         colorUniformLocation
@@ -111,9 +102,44 @@ debugRenderer win colorUniformLocation state (vaId,bId) = do
         0
         0
         1
-        vaId
-        bId
-    return (vaId, bId)
+        svaid
+        sbid
+    threadDelay (2 * 1000 * 1000)
+    let d = screenDrawable svaid
+--     (dDraw s) -- this works
+    drawUsingVertexArray
+        win
+        colorUniformLocation
+        (dVertexArrayId d)
+        (dColour d)
+        (dTransparency d)
+        (dDraw d)
+    let f = frameDrawable svaid
+    loadBuffer (dBufferId f) vertices
+    drawUsingVertexArray
+        win
+        colorUniformLocation
+        (dVertexArrayId f)
+        (dColour f)
+        (dTransparency f)
+        (glDrawArrays GL_LINES 0 8)
+--     let f = frameDrawable vaId
+--     loadUsingVertexArray (dVertexArrayId f) vertices
+--     drawUsingVertexArray
+--         win
+--         colorUniformLocation
+--         (dVertexArrayId f)
+--         (dColour f)
+--         (dTransparency f)
+--         (glDrawArrays GL_LINES 0 8)
+    -- below works too
+--     glClearColor 0.05 0.05 0.05 1
+--     glClear (GL_COLOR_BUFFER_BIT .|. GL_DEPTH_BUFFER_BIT)
+--     glDrawArrays GL_LINES 0 8
+    GLFW.swapBuffers win
+    glFlush  -- not necessary, but someone recommended it
+    threadDelay (2 * 1000 * 1000)
+    return (fvaid,svaid,lvaid)
 
 onWindow :: ([Drawable] -> IO ()) -> IO ()
 onWindow f = initializeDrawables f
@@ -132,7 +158,14 @@ renderDrawables ref win colorUniformLocation state ds = do
             (\d ->
                   Just (dCurrentValue d state series) /= dPreviousValue d)
             ds)
-        then mapM (renderDrawable ref win colorUniformLocation state) ds
+        then do
+             newds <- mapM (renderDrawable ref win colorUniformLocation state) ds
+             putStrLn "about to swap buffers after renderDrawables"
+             GLFW.swapBuffers win
+             glFlush  -- not necessary, but someone recommended it
+             putStrLn "sleeping after swapping buffers"
+             threadDelay (10 * 1000 * 1000)
+             return newds
         else return ds
 
 renderDrawable
@@ -145,11 +178,10 @@ renderDrawable
 renderDrawable ref win colorUniformLocation state drawable = do
     let justDraw =
             (\d -> do
-                 drawUsingBuffer
+                 drawUsingVertexArray
                      win
                      colorUniformLocation
                      (dVertexArrayId d)
-                     (dBufferId d)
                      (dColour d)
                      (dTransparency d)
                      (dDraw d)
@@ -256,7 +288,7 @@ screenDrawable
 screenDrawable vaId bId =
     let drawFunction = do
             glClearColor 0.05 0.05 0.05 1
-            glClear (GL_COLOR_BUFFER_BIT .|. GL_DEPTH_BUFFER_BIT)
+            glClear (GL_COLOR_BUFFER_BIT .|. GL_DEPTH_BUFFER_BIT .|. GL_STENCIL_BUFFER_BIT)
     in Drawable
        { dDraw = drawFunction
        , dPreviousValue = Just ValueEmpty
