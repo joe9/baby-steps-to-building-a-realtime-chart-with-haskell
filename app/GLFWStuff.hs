@@ -251,9 +251,9 @@ run drawFunction ds = do
             colorUniformLocation <- asks envColorUniformLocation
             uuds <-
                 liftIO (do uds <- liftIO (drawFunction win colorUniformLocation state ds)
-                           GLFW.swapBuffers win
+--                            GLFW.swapBuffers win
                            -- not necessary, but someone recommended it
-                           glFlush
+--                            glFlush
                            return uds)
             run drawFunction uuds
         )

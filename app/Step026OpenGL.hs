@@ -68,21 +68,54 @@ main = do
     --      putStrLn ("pricescale: " ++ show pricescale)
     --      putStrLn ("volumeScale: " ++ show volumescale)
     ref <- newIORef (dataSeries, xscale, pricescale, volumescale)
-    a <-
-        async
-            (threadDelay (1 * 1000 * 1000) >>
-             updatedData ref (dataSeries, xscale, pricescale, volumescale))
-    withGLFW (window onWindow (renderDrawables ref))
-    cancel a
+    --     a <-
+    --         async
+    --             (threadDelay (1 * 1000 * 1000) >>
+    --              updatedData ref (dataSeries, xscale, pricescale, volumescale))
+    --     withGLFW (window onWindow (renderDrawables ref))
+    withGLFW
+        (window debugUsingSingleBuffer debugRenderer)
 
--- drawWindow
---   :: Window -> ColorUniformLocation -> State -> IO ()
--- drawWindow win colorUniformLocation _ =
---   justDraw win colorUniformLocation vertices GL_TRIANGLES 1 0 0 1
---      justDraw window colorUniformLocation
---        vertices GL_LINE_LOOP 1 0 0 1
-onWindow
-    :: ([Drawable] -> IO ()) -> IO ()
+--     cancel a
+debugUsingSingleBuffer
+    :: ((VertexArrayId, BufferId) -> IO a) -> IO a
+debugUsingSingleBuffer f = withVertexArray (\vaId bId -> do f (vaId, bId))
+
+debugRenderer
+    :: Window
+    -> ColorUniformLocation
+    -> State
+    -> (VertexArrayId, BufferId)
+    -> IO (VertexArrayId, BufferId)
+debugRenderer win colorUniformLocation state (vaId,bId) = do
+    let vertices = (VS.fromList [-1, (0 :: GLfloat)
+                     ,-0.5, 1
+                     ,0, 0
+
+                     ,0, 0
+                     , 0.5, 1
+                     , 1, 0
+
+                     , 0.5, 0
+                     , 1, -1
+                     , 0, -1])
+    putStrLn ("Vertex Array Id: " ++ show vaId)
+    putStrLn ("Buffer Id: " ++ show bId)
+    justDrawThis
+        win
+        colorUniformLocation
+        vertices
+        (div (VS.length vertices) 2)
+        GL_TRIANGLES
+        1
+        0
+        0
+        1
+        vaId
+        bId
+    return (vaId, bId)
+
+onWindow :: ([Drawable] -> IO ()) -> IO ()
 onWindow f = initializeDrawables f
 
 renderDrawables
@@ -97,7 +130,7 @@ renderDrawables ref win colorUniformLocation state ds = do
     (series,_,_,_) <- readIORef ref
     if (any
             (\d ->
-                  Just (currentValue d state series) /= previousValue d)
+                  Just (dCurrentValue d state series) /= dPreviousValue d)
             ds)
         then mapM (renderDrawable ref win colorUniformLocation state) ds
         else return ds
@@ -112,23 +145,25 @@ renderDrawable
 renderDrawable ref win colorUniformLocation state drawable = do
     let justDraw =
             (\d -> do
-                 drawWith
+                 drawUsingBuffer
                      win
                      colorUniformLocation
-                     (vertexArrayId d)
-                     (bufferId d)
-                     (colour d)
-                     (transparency d)
-                     (draw d)
+                     (dVertexArrayId d)
+                     (dBufferId d)
+                     (dColour d)
+                     (dTransparency d)
+                     (dDraw d)
                  return d)
     (series,xscale,pricescale,volumescale) <- readIORef ref
-    let newValue = currentValue drawable state series
-    if (Just newValue /= previousValue drawable)
+    let newValue = dCurrentValue drawable state series
+    if (Just newValue /= dPreviousValue drawable)
         then do
-            putStrLn "renderDrawable called - loading buffer"
+            putStrLn
+                ("renderDrawable called - loading buffer and drawing of " ++
+                 show (dType drawable))
             -- With OpenGL, the coordinates should be in the range (-1, 1)
             drawFunction <-
-                (loadBufferAndBuildDrawFunction drawable)
+                (dLoadBufferAndBuildDrawFunction drawable)
                     state
                     series
                     xscale
@@ -137,10 +172,13 @@ renderDrawable ref win colorUniformLocation state drawable = do
                     drawable
             justDraw
                 (drawable
-                 { draw = drawFunction
-                 , previousValue = Just newValue
+                 { dDraw = drawFunction
+                 , dPreviousValue = Just newValue
                  })
-        else justDraw drawable
+        else do
+            putStrLn
+                ("renderDrawable called - drawing " ++ show (dType drawable))
+            justDraw drawable
 
 -- http://stackoverflow.com/questions/5293898/how-to-pass-state-between-event-handlers-in-gtk2hs
 -- the below is not a working solution. Use MVar or TVar or IORef as
@@ -199,34 +237,36 @@ initializeDrawables continueFunction =
                                                           svabid
                                                     , frameDrawable
                                                           fvaid
-                                                          fvabid
-                                                    , priceChartDrawable
-                                                          pvaid
-                                                          pvabid
-                                                    , volumeChartDrawable
-                                                          vvaid
-                                                          vvabid
-                                                    , horizontalCrosshairDrawable
-                                                          hcvaid
-                                                          hcvabid
-                                                    , verticalCrosshairDrawable
-                                                          vcvaid
-                                                          vcvabid]
+                                                          fvabid]
 
-screenDrawable :: VertexArrayId -> BufferId -> Drawable
+--                                                     , priceChartDrawable
+--                                                           pvaid
+--                                                           pvabid
+--                                                     , volumeChartDrawable
+--                                                           vvaid
+--                                                           vvabid
+--                                                     , horizontalCrosshairDrawable
+--                                                           hcvaid
+--                                                           hcvabid
+--                                                     , verticalCrosshairDrawable
+--                                                           vcvaid
+--                                                           vcvabid
+screenDrawable
+    :: VertexArrayId -> BufferId -> Drawable
 screenDrawable vaId bId =
     let drawFunction = do
             glClearColor 0.05 0.05 0.05 1
             glClear (GL_COLOR_BUFFER_BIT .|. GL_DEPTH_BUFFER_BIT)
     in Drawable
-       { draw = drawFunction
-       , previousValue = Nothing
-       , currentValue = \_ _ ->
-                             ValueInt 0
-       , loadBufferAndBuildDrawFunction = (\_ _ _ _ _ _ ->
-                                                return drawFunction)
-       , vertexArrayId = vaId
-       , bufferId = bId
-       , colour = red
-       , transparency = Nothing
+       { dDraw = drawFunction
+       , dPreviousValue = Just ValueEmpty
+       , dCurrentValue = \_ _ ->
+                              ValueEmpty
+       , dLoadBufferAndBuildDrawFunction = (\_ _ _ _ _ _ ->
+                                                 return drawFunction)
+       , dVertexArrayId = vaId
+       , dBufferId = bId
+       , dColour = red
+       , dTransparency = Nothing
+       , dType = Screen
        }

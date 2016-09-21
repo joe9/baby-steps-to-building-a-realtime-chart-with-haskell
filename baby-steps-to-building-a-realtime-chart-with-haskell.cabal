@@ -802,12 +802,11 @@ executable Step028TestGLFW
   build-depends:       base
                      , GLFW-b
                      , OpenGL
+                     , transformers
+                     , mtl
+                     , stm
+                     , pretty
   default-language:    Haskell2010
-  other-extensions:    DeriveDataTypeable
-                     , FlexibleContexts
-                     , TemplateHaskell
-                     , UndecidableInstances
-                     , OverloadedStrings
 
 -- test-suite baby-steps-to-building-a-realtime-chart-with-haskell-test
 --   type:                exitcode-stdio-1.0

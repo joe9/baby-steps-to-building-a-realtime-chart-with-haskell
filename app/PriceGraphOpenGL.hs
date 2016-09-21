@@ -23,22 +23,23 @@ priceChartDrawable
   :: VertexArrayId -> BufferId -> Drawable
 priceChartDrawable vaId bId =
   Drawable {
-            draw = return ()
-           ,loadBufferAndBuildDrawFunction =
+            dDraw = return ()
+           ,dLoadBufferAndBuildDrawFunction =
             (\_ dataSeries scalex scaleprice _ d -> do
                  do let vertices = priceBufferData scalex scaleprice dataSeries
-                    loadUsingBuffer (vertexArrayId d)
-                                    (bufferId d)
+                    loadUsingBuffer (dVertexArrayId d)
+                                    (dBufferId d)
                                     vertices
                     return (glDrawArrays GL_TRIANGLE_STRIP
                                          0
                                          (div (fromIntegral (VS.length vertices)) 2)))
-           ,previousValue = Nothing
-           ,currentValue = \_ -> ValueAsOf . asof . VU.last
-           ,vertexArrayId = vaId
-           ,bufferId = bId
-           ,colour = lightpink
-           ,transparency = Nothing}
+           ,dPreviousValue = Nothing
+           ,dCurrentValue = \_ -> ValueAsOf . asof . VU.last
+           ,dVertexArrayId = vaId
+           ,dBufferId = bId
+           ,dColour = lightpink
+           ,dTransparency = Nothing
+           ,dType = PriceChart}
 
 -- TODO dots
 --   Pictures ([areaBetweenBidAndAsk areaVertices] <> map dot scaledBids <>

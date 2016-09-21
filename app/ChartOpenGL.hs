@@ -59,27 +59,29 @@ volumeScale dataSeries =
 frameDrawable
   :: VertexArrayId -> BufferId -> Drawable
 frameDrawable vaId bId =
-  Drawable {draw = return ()
-           ,previousValue = Nothing
-           ,currentValue =
+  Drawable {dDraw = return ()
+           ,dPreviousValue = Nothing
+           ,dCurrentValue =
               (\s _ ->
                  ValueCursorPosition (stateCursorX s)
                                       (stateCursorY s))
-           ,loadBufferAndBuildDrawFunction =
+           ,dLoadBufferAndBuildDrawFunction =
               (\_ _ _ _ _ d ->
                  do let vertices =
                           VS.fromList
                             [-0.99,-0.99,-0.99,0.99,0.99,0.99,0.99,-0.99]
-                    loadUsingBuffer (vertexArrayId d)
-                                    (bufferId d)
+                    loadUsingBuffer (dVertexArrayId d)
+                                    (dBufferId d)
                                     vertices
+                    putStrLn ("frame vertices are: " ++ show vertices)
                     return (glDrawArrays GL_LINE_LOOP
                                          0
                                          (div (fromIntegral (VS.length vertices)) 2)))
-           ,vertexArrayId = vaId
-           ,bufferId = bId
-           ,colour = green
-           ,transparency = Nothing}
+           ,dVertexArrayId = 1 -- vaId
+           ,dBufferId = 1 -- bId
+           ,dColour = green
+           ,dTransparency = Nothing
+           ,dType = Frame}
 
 -- chart :: (Scale xscale
 --          ,Scale priceScale
@@ -130,44 +132,44 @@ horizontalCrosshairDrawable
   :: VertexArrayId -> BufferId -> Drawable
 horizontalCrosshairDrawable vaId bId =
   Drawable {
-            draw = return ()
-           ,loadBufferAndBuildDrawFunction =
+            dDraw = return ()
+           ,dLoadBufferAndBuildDrawFunction =
             (\state _ _ _ _ d -> do
                  do let f = fromIntegral :: Int -> Double
                         y =  ((2 * stateCursorY state) / f (stateWindowHeight state)) - 1
                         vertices = VS.fromList [-1,realToFrac y,1,realToFrac y]
-                    loadUsingBuffer (vertexArrayId d)
-                                    (bufferId d)
+                    loadUsingBuffer (dVertexArrayId d)
+                                    (dBufferId d)
                                     vertices
                     return (glDrawArrays GL_LINES
                                          0
                                          (div (fromIntegral (VS.length vertices)) 2)))
-           ,previousValue = Nothing
-           ,currentValue = (\s _ -> (ValueCursorPosition (stateCursorX s) (stateCursorY s)))
-           ,vertexArrayId = vaId
-           ,bufferId = bId
-           ,colour = green
-           ,transparency = Just 0.5}
+           ,dPreviousValue = Nothing
+           ,dCurrentValue = (\s _ -> (ValueCursorPosition (stateCursorX s) (stateCursorY s)))
+           ,dVertexArrayId = vaId
+           ,dBufferId = bId
+           ,dColour = green
+           ,dTransparency = Just 0.5, dType = HorizontalCrosshair}
 
 verticalCrosshairDrawable
   :: VertexArrayId -> BufferId -> Drawable
 verticalCrosshairDrawable vaId bId =
   Drawable {
-            draw = return ()
-           ,loadBufferAndBuildDrawFunction =
+            dDraw = return ()
+           ,dLoadBufferAndBuildDrawFunction =
             (\state _ _ _ _ d -> do
                  do let f = fromIntegral :: Int -> Double
                         x =  ((2 * stateCursorX state) / f (stateWindowWidth state)) - 1
                         vertices = VS.fromList [realToFrac x,-1,realToFrac x,1]
-                    loadUsingBuffer (vertexArrayId d)
-                                    (bufferId d)
+                    loadUsingBuffer (dVertexArrayId d)
+                                    (dBufferId d)
                                     vertices
                     return (glDrawArrays GL_TRIANGLE_STRIP
                                          0
                                          (div (fromIntegral (VS.length vertices)) 2)))
-           ,previousValue = Nothing
-           ,currentValue = \s _ -> (ValueCursorPosition (stateCursorX s) (stateCursorY s))
-           ,vertexArrayId = vaId
-           ,bufferId = bId
-           ,colour = green
-           ,transparency = Just 0.5}
+           ,dPreviousValue = Nothing
+           ,dCurrentValue = \s _ -> (ValueCursorPosition (stateCursorX s) (stateCursorY s))
+           ,dVertexArrayId = vaId
+           ,dBufferId = bId
+           ,dColour = green
+           ,dTransparency = Just 0.5, dType = VerticalCrosshair}
