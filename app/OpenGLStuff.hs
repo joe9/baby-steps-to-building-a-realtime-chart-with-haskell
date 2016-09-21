@@ -329,13 +329,10 @@ withProgram f =
              -- do not bother rendering on the back face
              -- I like writing the vertices is clockwise order
              -- https://www.opengl.org/wiki/Face_Culling
-             -- TODO uncomment the below culling code
-             --              glFrontFace
-             --                  GL_CW
-             --              glCullFace GL_BACK
-             --              glEnable GL_CULL_FACE
-             f
-                 programId)
+             glFrontFace GL_CW
+             glCullFace GL_BACK
+             glEnable GL_CULL_FACE
+             f programId)
 
 -- the infoLogLength includes the size of the null termination character
 -- do not bother printing the infoLog if it just has the null
