@@ -75,8 +75,8 @@ volumeChartDrawable :: VertexArrayId -> BufferId -> Drawable
 volumeChartDrawable vaId bId =
     Drawable
     { dDraw = return ()
-    , dLoadBufferAndBuildDrawFunction = \_ dataSeries scalex scaleprice _ d -> do
-          do let vertices = volumeBufferData scalex scaleprice dataSeries
+    , dLoadBufferAndBuildDrawFunction = \_ dataSeries scalex _ scalevolume d -> do
+          do let vertices = volumeBufferData scalex scalevolume dataSeries
              loadBuffer (dBufferId d) vertices
              return
                  (glDrawArrays

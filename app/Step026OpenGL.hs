@@ -50,7 +50,7 @@ main
     :: IO ()
 main = do
     dataSeries <- buildDataSeries
-    dataSeries <- return staticDataSeries
+    --     dataSeries <- return staticDataSeries
     let xscale = xScale dataSeries
         pricescale = priceScale dataSeries
         volumescale = volumeScale dataSeries
@@ -199,9 +199,9 @@ initializeDrawables continueFunction =
                                                     , priceChartDrawable
                                                           pvaid
                                                           pvabid
---                                                     , volumeChartDrawable
---                                                           vvaid
---                                                           vvabid
+                                                    , volumeChartDrawable
+                                                          vvaid
+                                                          vvabid
                                                     , horizontalCrosshairDrawable
                                                           hcvaid
                                                           hcvabid
