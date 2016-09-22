@@ -152,8 +152,7 @@ updatedData ref oldData = do
         (\_ ->
               (newSeries, ()))
     GLFW.postEmptyEvent
-    threadDelay
-        (1 * 1000 * 1000)
+    threadDelay (1 * 1000 * 1000)
     updatedData ref newSeries
 
 addAnother
